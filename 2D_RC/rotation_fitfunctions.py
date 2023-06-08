@@ -12,6 +12,7 @@ from galaxy_component_functions import bulge_vel, \
     vel_tot_bur
 from scipy.optimize import minimize, Bounds
 
+
 def find_phi(center_coords, phi_angle, vel_map):
     '''
     Find a point along the semi-major axis that has data to determine if phi
@@ -59,8 +60,6 @@ def find_phi(center_coords, phi_angle, vel_map):
 
     checkpoint_masked = True
 
-
-
     while checkpoint_masked:
         delta_x = int(center_coords[1] * f)
         delta_y = int(delta_x / np.tan(phi))
@@ -97,7 +96,7 @@ def find_phi(center_coords, phi_angle, vel_map):
 
 def loglikelihood_iso_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat, ivar_flat, mask):
     rho0_h, Rh, incl, phi, x_center, y_center, vsys = params
-    total_param = [rhob, Rb, SigD, Rd,rho0_h, Rh,incl,phi,x_center,y_center, vsys]
+    total_param = [rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
     ############################################################################
     # Construct the model
     # ---------------------------------------------------------------------------
@@ -117,7 +116,8 @@ def nloglikelihood_iso_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat
 
 
 def loglikelihood_NFW_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat, ivar_flat, mask):
-    total_param = [rhob, Rb, SigD, Rd] + params
+    rho0_h, Rh, incl, phi, x_center, y_center, vsys = params
+    total_param = [rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
     ############################################################################
     # Construct the model
     # ---------------------------------------------------------------------------
@@ -137,7 +137,8 @@ def nloglikelihood_NFW_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat
 
 
 def loglikelihood_bur_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat, ivar_flat, mask):
-    total_param = [rhob, Rb, SigD, Rd] + params
+    rho0_h, Rh, incl, phi, x_center, y_center, vsys = params
+    total_param = [rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
     # log_rhob0, Rb, SigD, Rd, rho0_h, Rh, inclination, phi, center_x, center_y, vsys
     ############################################################################
     # Construct the model
@@ -232,7 +233,7 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
     ig_iso = [-3, 25, incl, ph, x_guess, y_guess, vsys]
     # ig_iso = [-1, 1, 1000, 4, 0.001, 25, incl, ph, x_guess, y_guess, vsys]
     # ig_iso = [0.0001, 4, 2000, 25, 5, 250, incl, ph, x_guess, y_guess, vsys]
-    print(ig_iso)
+    # print(ig_iso)
 
     bestfit_iso = minimize(nloglikelihood_iso_flat,
                            ig_iso,
@@ -242,6 +243,65 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                            method='Powell',
                            bounds=bounds_iso)
     print('---------------------------------------------------')
-    print(bestfit_iso)
+    # print(bestfit_iso)
 
     return bestfit_iso.x
+
+
+def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
+    incl, ph, x_guess, y_guess = params
+
+    bounds_nfw = [[0.0001, 0.1],  # Halo density [log(Msun/pc^3)]
+                  [0.1, 1000],  # Halo radius [kpc]
+                  [0.1, 0.5 * np.pi],  # Inclination angle
+                  [0, 2 * np.pi],  # Phase angle
+                  [x_guess - 10, x_guess + 10],  # center_x
+                  [y_guess - 10, y_guess + 10],  # center_y
+                  [-100, 100]]  # systemic velocity
+
+    vsys = 0
+
+    ig_NFW = [-3, 25, incl, ph, x_guess, y_guess, vsys]
+    # ig_iso = [-1, 1, 1000, 4, 0.001, 25, incl, ph, x_guess, y_guess, vsys]
+    # ig_iso = [0.0001, 4, 2000, 25, 5, 250, incl, ph, x_guess, y_guess, vsys]
+    # print(ig_iso)
+
+    bestfit_NFW = minimize(nloglikelihood_NFW_flat,
+                           ig_NFW,
+                           args=(rhob, Rb, SigD, Rd, scale, shape,
+                                 vmap.compressed(),
+                                 ivar.compressed(), mask),
+                           method='Powell',
+                           bounds=bounds_nfw)
+    print('---------------------------------------------------')
+    # print(bestfit_iso)
+
+    return bestfit_NFW.x
+
+
+def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
+    incl, ph, x_guess, y_guess = params
+
+    bounds_bur = [[-7, 2],  # Halo density [log(Msun/pc^3)]
+                  [0.1, 1000],  # Halo radius [kpc]
+                  [0.1, 0.436 * np.pi],  # Inclination angle
+                  [0, 2.2 * np.pi],  # Phase angle
+                  [x_guess - 10, x_guess + 10],  # center_x
+                  [y_guess - 10, y_guess + 10],  # center_y
+                  [-100, 100]]  # systemic velocity
+
+    vsys = 0
+
+    ig_bur = [-3, 25, incl, ph, x_guess, y_guess, vsys]
+
+    bestfit_bur = minimize(nloglikelihood_NFW_flat,
+                           ig_NFW,
+                           args=(rhob, Rb, SigD, Rd, scale, shape,
+                                 vmap.compressed(),
+                                 ivar.compressed(), mask),
+                           method='Powell',
+                           bounds=bounds_bur)
+    print('---------------------------------------------------')
+    # print(bestfit_iso)
+
+    return bestfit_bur.x
