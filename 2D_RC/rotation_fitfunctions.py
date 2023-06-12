@@ -211,7 +211,10 @@ def rot_incl_bur(shape, scale, params):
             r = np.sqrt(x ** 2 + y ** 2)
             theta = np.arctan2(-x, y)
             r_in_kpc = r * scale
-            v = vel_tot_bur(r_in_kpc, [rhob0, Rb, SigD, Rd, rho0_h, Rh]) * np.sin(inclination) * np.cos(theta)
+            if r !=0:
+                v = vel_tot_bur(r_in_kpc, [rhob0, Rb, SigD, Rd, rho0_h, Rh]) * np.sin(inclination) * np.cos(theta)
+            else:
+                v = 0    
             rotated_inclined_map[i, j] = v + vsys
 
     return rotated_inclined_map
@@ -243,7 +246,7 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                            method='Powell',
                            bounds=bounds_iso)
     print('---------------------------------------------------')
-    # print(bestfit_iso)
+    print(bestfit_iso)
 
     return bestfit_iso.x
 
@@ -251,10 +254,10 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
 def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
     incl, ph, x_guess, y_guess = params
 
-    bounds_nfw = [[0.0001, 0.1],  # Halo density [log(Msun/pc^3)]
+    bounds_nfw = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [0.1, 1000],  # Halo radius [kpc]
-                  [0.1, 0.5 * np.pi],  # Inclination angle
-                  [0, 2 * np.pi],  # Phase angle
+                  [0.1, 0.436 * np.pi],  # Inclination angle
+                  [0, 2.2 * np.pi],  # Phase angle
                   [x_guess - 10, x_guess + 10],  # center_x
                   [y_guess - 10, y_guess + 10],  # center_y
                   [-100, 100]]  # systemic velocity
@@ -274,7 +277,7 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                            method='Powell',
                            bounds=bounds_nfw)
     print('---------------------------------------------------')
-    # print(bestfit_iso)
+    print(bestfit_NFW)
 
     return bestfit_NFW.x
 
@@ -294,14 +297,14 @@ def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
 
     ig_bur = [-3, 25, incl, ph, x_guess, y_guess, vsys]
 
-    bestfit_bur = minimize(nloglikelihood_NFW_flat,
-                           ig_NFW,
+    bestfit_bur = minimize(nloglikelihood_bur_flat,
+                           ig_bur,
                            args=(rhob, Rb, SigD, Rd, scale, shape,
                                  vmap.compressed(),
                                  ivar.compressed(), mask),
                            method='Powell',
                            bounds=bounds_bur)
     print('---------------------------------------------------')
-    # print(bestfit_iso)
+    print(bestfit_bur)
 
     return bestfit_bur.x

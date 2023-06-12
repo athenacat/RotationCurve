@@ -1,9 +1,9 @@
 ################################################################################
 # Pacakges
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 from scipy import integrate as inte
 from scipy.optimize import minimize
-from scipy.special import k0, k1, i0, i1 #kn, iv
+from scipy.special import k0, k1, i0, i1  # kn, iv
 
 import numpy as np
 
@@ -17,15 +17,11 @@ import astropy.units as u
 ################################################################################
 
 
-
-
 ################################################################################
 # Constants
 G = 6.674E-11  # m^3 kg^-1 s^-2
 Msun = 1.989E30  # kg
 ################################################################################
-
-
 
 
 '''
@@ -50,11 +46,9 @@ def bulge_vel(r, A, Vin, Rd):
 '''
 
 
-
 ################################################################################
 # Exponential bulge model (Feng2014)
 def bulge_vel(r, rho_0, Rb):
-
     '''
     if isinstance(r,float):
         mass_b = 4 * np.pi * rho_0 * ((-1/3*Rb**3*np.exp(-(r/Rb)**3)+(1/3)*(Rb**3)))
@@ -63,17 +57,19 @@ def bulge_vel(r, rho_0, Rb):
         for i in range(len(r)):
             mass_b[i] = 4 * np.pi * rho_0 * ((-(1/3)*(Rb**3)*np.exp(-(r[i]/Rb)**3)+(1/3)*(Rb**3)))
     '''
-    mass_b = (4./3.) * np.pi * rho_0 * Rb**3 * (1 - np.exp(-(r/Rb)**3))
+    mass_b = (4. / 3.) * np.pi * rho_0 * Rb ** 3 * (1 - np.exp(-(r / Rb) ** 3))
 
     vel = np.sqrt((G * mass_b * Msun) / (r * 3.086e16))
 
-    return vel/1000
+    return vel / 1000
+
+
 ################################################################################
 
 
 ################################################################################
 # de Vaucouleur's bulge model (Integrating volume mass density)
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 '''
 gamma = 3.3308 # unitless
 kappa = gamma*ln(10) # unitless
@@ -115,6 +111,8 @@ def density_integrand(x,r,SigBC,Rb):
     """
     return -(1/np.pi)*dsdx(x,SigBC,Rb)/np.sqrt(x**2-r**2)
 '''
+
+
 # mass integrand
 def mass_integrand(r, SigBC, Rb):
     """
@@ -127,11 +125,12 @@ def mass_integrand(r, SigBC, Rb):
     return: volume density of the bulge
     """
     # integrating for volume density
-    vol_den, vol_den_err = inte.quad(deV_integrand, r, np.inf, args=(r,SigBC,Rb))
-    return 4 * np.pi * vol_den * r**2
+    vol_den, vol_den_err = inte.quad(deV_integrand, r, np.inf, args=(r, SigBC, Rb))
+    return 4 * np.pi * vol_den * r ** 2
+
 
 # getting a velocity
-def bulge_vel_deV(r,SigBC,Rb):
+def bulge_vel_deV(r, SigBC, Rb):
     """
     parameters:
     r (radius): The a distance from the centre (pc)
@@ -148,13 +147,15 @@ def bulge_vel_deV(r,SigBC,Rb):
         err = np.zeros(len(r))
 
         for i in range(len(r)):
-            bulge_mass[i],err[i] = inte.quad(mass_integrand, 0, r[i], args=(SigBC, Rb))
+            bulge_mass[i], err[i] = inte.quad(mass_integrand, 0, r[i], args=(SigBC, Rb))
 
     # v = sqrt(GM/r) for circular velocity
-    vel = np.sqrt(G*(bulge_mass*Msun)/(r*3.08E16))
+    vel = np.sqrt(G * (bulge_mass * Msun) / (r * 3.08E16))
     vel /= 1000
 
     return vel
+
+
 ################################################################################
 
 
@@ -162,7 +163,7 @@ def bulge_vel_deV(r,SigBC,Rb):
 # Disk velocity from Sofue 2013
 #
 # Fitting for central surface density
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # def disk_vel(params, r):
 def disk_vel(r, SigD, Rd):
     '''
@@ -176,31 +177,30 @@ def disk_vel(r, SigD, Rd):
     y = r / (2 * Rd)
 
     bessel_component = i0(y) * k0(y) - i1(y) * k1(y)
-    
+
     vel2 = (4 * np.pi * G * SigD * y ** 2 * (Rd / (3.086e16)) * Msun) * bessel_component
 
     return np.sqrt(vel2) / 1000
+
+
 ################################################################################
-
-
-
 
 
 ################################################################################
 # Circular velocity for isothermal Halo without the complicated integrals
 # from eqn (51) & (52) from Sofue 2013.
 # integral form can be seen from "rotation_curve_functions.py"
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 def halo_vel_iso(r, rho0_h, Rh):
     '''
     :param r: The a distance from the centre (pc)
-    :param rho_iso: The central density of the halo (M_sol/pc^3)
+    :param rho_iso: The central density of the halo (log(M_sol/pc^3))
     :param Rh: The scale radius of the dark matter halo (pc)
     :return: rotational velocity
     '''
-
-    #v_inf = np.sqrt((4 * np.pi * G * rho0_h * Msun * Rh**2) / 3.03E16)
-    v_inf = np.sqrt((4 * np.pi * G * rho0_h * Msun * Rh**2) / 3.086e16)/1000 #km/s
+    rho0_h = np.power(10, rho0_h)  # converting from log
+    # v_inf = np.sqrt((4 * np.pi * G * rho0_h * Msun * Rh**2) / 3.03E16)
+    v_inf = np.sqrt((4 * np.pi * G * rho0_h * Msun * Rh ** 2) / 3.086e16) / 1000  # km/s
 
     '''
     if isinstance(r,float):
@@ -216,14 +216,14 @@ def halo_vel_iso(r, rho0_h, Rh):
 
             vel[i] = v_inf * np.sqrt(1 - ((Rh/r[i])*np.arctan2(r[i],Rh)))
     '''
-    vel = v_inf*np.sqrt(1 - ((Rh/r)*np.arctan2(r,Rh)))
 
-    #return vel/1000
+    vel = v_inf * np.sqrt(1 - ((Rh / r) * np.arctan2(r, Rh)))
+
+    # return vel/1000
     return vel
+
+
 ################################################################################
-
-
-
 
 
 ################################################################################
@@ -231,8 +231,9 @@ def halo_vel_iso(r, rho0_h, Rh):
 # velocity calculated from mass with already evaluated integral
 # from density profile (eqn 55, Sofue 2013)
 # integral form can be seen from "rotation_curve_functions.py"
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 def halo_vel_NFW(r, rho0_h, Rh):
+    rho0_h = np.power(10,rho0_h) #converting from log
     '''
     if isinstance(r, float):
 
@@ -246,16 +247,15 @@ def halo_vel_NFW(r, rho0_h, Rh):
 
             halo_mass[i] = 4*np.pi*rho0_h*Rh**3*((Rh/(Rh+r[i])) + np.log(Rh + r[i]) - 1 - np.log(Rh))
     '''
-    halo_mass = 4 * np.pi * rho0_h * Rh**3 * ((Rh/(Rh + r)) + np.log(Rh + r) - 1 - np.log(Rh))
+    halo_mass = 4 * np.pi * rho0_h * Rh ** 3 * ((Rh / (Rh + r)) + np.log(Rh + r) - 1 - np.log(Rh))
+    # vel2 = G * (halo_mass * Msun) / (r * 3.08E16)
 
-    #vel2 = G * (halo_mass * Msun) / (r * 3.08E16)
     vel2 = G * (halo_mass * Msun) / (r * 3.086e16)
 
-    return np.sqrt(vel2)/1000
+    return np.sqrt(vel2) / 1000
+
+
 ################################################################################
-
-
-
 
 
 ################################################################################
@@ -263,8 +263,8 @@ def halo_vel_NFW(r, rho0_h, Rh):
 # velocity calculated from mass with already evaluated integral
 # from density profile (eqn 56, Sofue 2013)
 # integral form can be seen from "rotation_curve_functions.py"
-#-------------------------------------------------------------------------------
-def halo_vel_bur(r,rho0_h, Rh):
+# -------------------------------------------------------------------------------
+def halo_vel_bur(r, rho0_h, Rh):
     '''
     if isinstance(r, float):
 
@@ -288,25 +288,21 @@ def halo_vel_bur(r,rho0_h, Rh):
                                                           + 2*np.log(Rh)\
                                                           - 2*np.arctan2(0, Rh))
     '''
-    halo_mass = np.pi * (-rho0_h) * (Rh**3) * (-np.log(Rh**2 + r**2) \
-                                               - 2*np.log(Rh + r)\
-                                               + 2*np.arctan2(r, Rh)\
-                                               + np.log(Rh**2)\
-                                               + 2*np.log(Rh)\
-                                               - 2*np.arctan2(0, Rh))
+    rho0_h = np.power(10, rho0_h)  # converting from log
+    #print(halo_mass)
 
+    halo_mass = np.pi * rho0_h * (Rh ** 3) * (np.log(Rh ** 2 + r ** 2) - 2 * np.log(Rh + r) + 2 * np.arctan2(r, Rh) + np.log(Rh ** 2) + 2 * np.log(Rh) - 2 * np.arctan2(0, Rh))
     vel2 = G * (halo_mass * Msun) / (r * 3.086E16)
 
     return np.sqrt(vel2) / 1000
+
+
 ################################################################################
-
-
-
 
 
 ################################################################################
 # Isothermal
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 def vel_tot_iso(r, params):
     rhob0, Rb, SigD, Rd, rho0_h, Rh = params
 
@@ -319,12 +315,14 @@ def vel_tot_iso(r, params):
     Vdisk = disk_vel(r_pc, SigD, Rd_pc)
     Vhalo = halo_vel_iso(r_pc, rho0_h, Rh_pc)
 
-    v2 = Vbulge**2 + Vdisk**2 + Vhalo**2
+    v2 = Vbulge ** 2 + Vdisk ** 2 + Vhalo ** 2
 
     return np.sqrt(v2)
-#-------------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------------
 # NFW
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 def vel_tot_NFW(r, params):
     rhob0, Rb, SigD, Rd, rho0_h, Rh = params
 
@@ -337,12 +335,14 @@ def vel_tot_NFW(r, params):
     Vdisk = disk_vel(r_pc, SigD, Rd_pc)
     Vhalo = halo_vel_NFW(r_pc, rho0_h, Rh_pc)
 
-    v2 = Vbulge**2 + Vdisk**2 + Vhalo**2
+    v2 = Vbulge ** 2 + Vdisk ** 2 + Vhalo ** 2
 
     return np.sqrt(v2)
-#-------------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------------
 # Burket
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 def vel_tot_bur(r, params):
     rhob0, Rb, SigD, Rd, rho0_h, Rh = params
 
@@ -355,9 +355,11 @@ def vel_tot_bur(r, params):
     Vdisk = disk_vel(r_pc, SigD, Rd_pc)
     Vhalo = halo_vel_bur(r_pc, rho0_h, Rh_pc)
 
-    v2 = Vbulge**2 + Vdisk**2 + Vhalo**2
+    v2 = Vbulge ** 2 + Vdisk ** 2 + Vhalo ** 2
 
     return np.sqrt(v2)
+
+
 ################################################################################
 
 '''
