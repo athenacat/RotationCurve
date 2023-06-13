@@ -1,17 +1,10 @@
-# from Kelly Douglass
+
 
 import numpy as np
 import numpy.ma as ma
-from galaxy_component_functions import bulge_vel, \
-    disk_vel, \
-    halo_vel_iso, \
-    halo_vel_NFW, \
-    halo_vel_bur, \
-    vel_tot_iso, \
-    vel_tot_NFW, \
-    vel_tot_bur
-from scipy.optimize import minimize, Bounds
 
+from scipy.optimize import minimize
+from rotation_curve_functions import bulge_vel, disk_vel, halo_vel_iso, halo_vel_NFW, halo_vel_Bur
 
 def find_phi(center_coords, phi_angle, vel_map):
     '''
@@ -93,6 +86,57 @@ def find_phi(center_coords, phi_angle, vel_map):
 
     return phi_adjusted
 
+def vel_tot_iso(r, params):
+    rhob0, Rb, SigD, Rd, rho0_h, Rh = params
+
+    r_pc = r * 1000
+    Rh_pc = Rh * 1000
+
+    Vbulge = bulge_vel(r_pc, rhob0, Rb)
+    Vdisk = disk_vel(r, SigD, Rd)
+    Vhalo = halo_vel_iso(r_pc, rho0_h, Rh_pc)
+
+    v2 = Vbulge ** 2 + Vdisk ** 2 + Vhalo ** 2
+
+    return np.sqrt(v2)
+
+
+# -------------------------------------------------------------------------------
+# NFW
+# -------------------------------------------------------------------------------
+def vel_tot_NFW(r, params):
+    rhob0, Rb, SigD, Rd, rho0_h, Rh = params
+
+    r_pc = r * 1000
+    Rh_pc = Rh * 1000
+
+    Vbulge = bulge_vel(r_pc, rhob0, Rb)
+    Vdisk = disk_vel(r, SigD, Rd)
+    Vhalo = halo_vel_NFW(r_pc, rho0_h, Rh_pc)
+
+    v2 = Vbulge ** 2 + Vdisk ** 2 + Vhalo ** 2
+
+    return np.sqrt(v2)
+
+
+# -------------------------------------------------------------------------------
+# Burket
+# -------------------------------------------------------------------------------
+def vel_tot_bur(r, params):
+    rhob0, Rb, SigD, Rd, rho0_h, Rh = params
+
+    r_pc = r * 1000
+    Rh_pc = Rh * 1000
+
+    Vbulge = bulge_vel(r_pc, rhob0, Rb)
+    Vdisk = disk_vel(r, SigD, Rd)
+    Vhalo = halo_vel_Bur(r_pc, rho0_h, Rh_pc)
+
+    v2 = Vbulge ** 2 + Vdisk ** 2 + Vhalo ** 2
+
+    return np.sqrt(v2)
+
+
 
 def loglikelihood_iso_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat, ivar_flat, mask):
     rho0_h, Rh, incl, phi, x_center, y_center, vsys = params
@@ -128,7 +172,6 @@ def loglikelihood_NFW_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat,
 
     logL = -0.5 * np.sum((vdata_flat - model_flat) ** 2 * ivar_flat \
                          - np.log(ivar_flat))
-
     return logL
 
 
@@ -159,8 +202,8 @@ def nloglikelihood_bur_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat
 
 
 def rot_incl_iso(shape, scale, params):
-    rhob0, Rb, SigD, Rd, rho0_h, Rh, inclination, phi, center_x, center_y, vsys = params
-
+    rhob0, Rb, SigD, Rd, logrho0_h, Rh, inclination, phi, center_x, center_y, vsys = params
+    rho0_h = np.power(10,logrho0_h)
     rotated_inclined_map = np.zeros(shape, dtype=float)
 
     for i in range(shape[0]):
@@ -184,7 +227,8 @@ def rot_incl_iso(shape, scale, params):
 
 
 def rot_incl_NFW(shape, scale, params):
-    rhob0, Rb, SigD, Rd, rho0_h, Rh, inclination, phi, center_x, center_y, vsys = params
+    rhob0, Rb, SigD, Rd, logrho0_h, Rh, inclination, phi, center_x, center_y, vsys = params
+    rho0_h = np.power(10, logrho0_h)
     rotated_inclined_map = np.zeros(shape)
 
     for i in range(shape[0]):
@@ -201,7 +245,8 @@ def rot_incl_NFW(shape, scale, params):
 
 
 def rot_incl_bur(shape, scale, params):
-    rhob0, Rb, SigD, Rd, rho0_h, Rh, inclination, phi, center_x, center_y, vsys = params
+    rhob0, Rb, SigD, Rd, logrho0_h, Rh, inclination, phi, center_x, center_y, vsys = params
+    rho0_h = np.power(10, logrho0_h)
     rotated_inclined_map = np.zeros(shape)
 
     for i in range(shape[0]):
@@ -234,10 +279,6 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
     vsys = 0
 
     ig_iso = [-3, 25, incl, ph, x_guess, y_guess, vsys]
-    # ig_iso = [-1, 1, 1000, 4, 0.001, 25, incl, ph, x_guess, y_guess, vsys]
-    # ig_iso = [0.0001, 4, 2000, 25, 5, 250, incl, ph, x_guess, y_guess, vsys]
-    # print(ig_iso)
-
     bestfit_iso = minimize(nloglikelihood_iso_flat,
                            ig_iso,
                            args=(rhob, Rb, SigD, Rd, scale, shape,

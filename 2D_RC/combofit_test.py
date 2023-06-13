@@ -6,6 +6,8 @@ from scipy.optimize import minimize, Bounds
 from DRP_rotation_curve import extract_data, extract_Pipe3d_data
 from disk_mass import calc_mass_curve, fit_mass_curve
 from rotation_fitfunctions import find_phi, parameterfit_iso, parameterfit_NFW, parameterfit_bur
+from RC_plotting_functions import plot_diagnostic_panel
+import matplotlib.pyplot as plt
 
 FILE_IDS = ['7443-12705']
 H_0 = 100  # Hubble's Constant in units of h km/s/Mpc
@@ -27,9 +29,10 @@ for i in range(len(DRP_table)):
 
     DRP_index[gal_ID] = i
 for gal_ID in FILE_IDS:
-
-    maps = extract_data(VEL_MAP_FOLDER,
-                        gal_ID,
+    best_vfit_set = []
+    best_diskfit_set = []
+    maps = extract_data(VEL_MAP_FOLDER,\
+                        gal_ID,\
                         ['Ha_vel', 'r_band', 'Ha_flux', 'Ha_sigma'])
     sMass_density, sMass_density_err = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
     i_DRP = DRP_index[gal_ID]
@@ -49,31 +52,62 @@ for gal_ID in FILE_IDS:
     y_center = center[1]
     count = 0
     phi = find_phi(center, phi, maps['vmasked'])
-    while count < 3:
-        mass_data_table = calc_mass_curve(sMass_density,
-                                          sMass_density_err,
-                                          maps['r_band'],
-                                          map_mask,
-                                          x_center,
-                                          y_center,
-                                          axis_ratio,
-                                          phi,
-                                          z,
+    print("find_phi", phi * 180 / np.pi)
+    print(incl)
+    while count < 1:
+        mass_data_table = calc_mass_curve(sMass_density,\
+                                          sMass_density_err,\
+                                          maps['r_band'],\
+                                          map_mask,\
+                                          x_center,\
+                                          y_center,\
+                                          axis_ratio,\
+                                          phi,\
+                                          z,\
                                           gal_ID)
         print(gal_ID, "mass curve calculated")
-        param_outputs = fit_mass_curve(mass_data_table,
-                                       gal_ID,
+        param_outputs = fit_mass_curve(mass_data_table,\
+                                       gal_ID,\
                                        fit_function)
         print(param_outputs)
-        print(incl, phi)
+        # print(incl, phi)
 
         param = [incl, phi, x_center, y_center]
-        best_fit_NFW = parameterfit_NFW(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],
-                                        param_outputs['Sigma_disk'], param_outputs['R_disk'], scale, shape,
+        best_fit_NFW = parameterfit_NFW(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+                                        param_outputs['Sigma_disk'], param_outputs['R_disk'], scale, shape,\
                                         maps['vmasked'], maps['ivarmasked'], map_mask)
-        print(best_fit_NFW)
-        x_center = best_fit_NFW[4]
-        y_center = best_fit_NFW[5]
-        incl = best_fit_NFW[2]
-        phi = best_fit_NFW[3]
+        best_fit_bur = parameterfit_bur(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+                                        param_outputs['Sigma_disk'], param_outputs['R_disk'], scale, shape,\
+                                        maps['vmasked'], maps['ivarmasked'], map_mask)
+        best_fit_iso = parameterfit_iso(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+                                        param_outputs['Sigma_disk'], param_outputs['R_disk'], scale, shape,\
+                                        maps['vmasked'], maps['ivarmasked'], map_mask)
+
+
+
+        # best_vfit_set.append(best_fit_NFW)
+        # best_diskfit_set.append(param_outputs)
+        # x_center = best_fit_NFW[4]
+        # y_center = best_fit_NFW[5]
+        # incl = best_fit_NFW[2]
+        # phi = best_fit_NFW[3]
         count += 1
+    # print(best_diskfit_set)
+    # print(best_vfit_set)
+    iso_fit = [param_outputs['rho_bulge'], param_outputs['R_bulge'], param_outputs['Sigma_disk'],param_outputs['R_disk'],best_fit_bur[0],best_fit_bur[1],best_fit_bur[2],best_fit_bur[3],best_fit_bur[4],best_fit_bur[5],best_fit_bur[6]]
+             
+       
+    NFW_fit = [param_outputs['rho_bulge'], param_outputs['R_bulge'], param_outputs['Sigma_disk'],param_outputs['R_disk'],best_fit_bur[0],best_fit_bur[1],best_fit_bur[2],best_fit_bur[3],best_fit_bur[4],best_fit_bur[5],best_fit_bur[6]]
+               
+    bur_fit = [param_outputs['rho_bulge'], param_outputs['R_bulge'], param_outputs['Sigma_disk'],param_outputs['R_disk'],best_fit_bur[0],best_fit_bur[1],best_fit_bur[2],best_fit_bur[3],best_fit_bur[4],best_fit_bur[5],best_fit_bur[6]]
+    plt.imshow(maps['vmasked'],origin='lower', cmap='RdBu_r', vmin=-125, vmax=125)
+
+    plt.xlabel('spaxel')
+    plt.ylabel('spaxel')
+
+    cbar = plt.colorbar()
+    cbar.set_label('km/s')
+    plt.title('7443-12705 data')
+    plot_diagnostic_panel(gal_ID, shape, scale, iso_fit, NFW_fit, bur_fit, map_mask, maps['vmasked'],maps['ivarmasked'])
+    plt.savefig(r"C:\Users\Lara\Documents\rotationcurves\7443-12705_diagnostic")
+

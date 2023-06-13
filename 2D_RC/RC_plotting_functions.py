@@ -9,8 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 
-from rotation_fitfunctions import rot_incl_iso, rot_incl_NFW, rot_incl_bur, vel_tot_bur, vel_tot_iso, vel_tot_NFW
-from galaxy_component_functions import bulge_vel, disk_vel, halo_vel_NFW, halo_vel_bur, halo_vel_iso
+from rotation_fitfunctions import rot_incl_iso, rot_incl_NFW, rot_incl_bur, vel_tot_bur, vel_tot_iso, vel_tot_NFW,bulge_vel, disk_vel, halo_vel_NFW, halo_vel_Bur, halo_vel_iso
 from astropy.io import fits
 
 
@@ -289,7 +288,7 @@ def plot_rot_curve(mHa_vel,
                 v[i] = vel_tot_NFW(r[i], [best_fit_values[0], best_fit_values[1], best_fit_values[2], best_fit_values[3],
                                    best_fit_values[4], best_fit_values[5]])
             elif halo_model == 'Burkert':
-                v_h[i] = halo_vel_bur(r[i] * 1000, best_fit_values[4], best_fit_values[5] * 1000)
+                v_h[i] = halo_vel_Bur(r[i] * 1000, best_fit_values[4], best_fit_values[5] * 1000)
                 v[i] = vel_tot_bur(r[i], [best_fit_values[0], best_fit_values[1], best_fit_values[2], best_fit_values[3],
                                    best_fit_values[4], best_fit_values[5]])
             else:
@@ -306,7 +305,7 @@ def plot_rot_curve(mHa_vel,
                 v[i] = -vel_tot_NFW(np.abs(r[i]), [best_fit_values[0], best_fit_values[1], best_fit_values[2],
                                     best_fit_values[3], best_fit_values[4], best_fit_values[5]])
             elif halo_model == 'Burkert':
-                v_h[i] = -halo_vel_bur(np.abs(r[i] * 1000), best_fit_values[4], best_fit_values[5] * 1000)
+                v_h[i] = -halo_vel_Bur(np.abs(r[i] * 1000), best_fit_values[4], best_fit_values[5] * 1000)
                 v[i] = -vel_tot_bur(np.abs(r[i]), [best_fit_values[0], best_fit_values[1], best_fit_values[2],
                                     best_fit_values[3], best_fit_values[4], best_fit_values[5]])
             else:
@@ -321,7 +320,7 @@ def plot_rot_curve(mHa_vel,
     ax.plot(rm_deproj, vm_deproj, 'k.', markersize=1)
     ax.plot(r, v, 'c', label='v tot')
     ax.plot(r, v_b, '--', label='bulge')
-    ax.plot(r, v_d, '.-', label='disk')
+    ax.plot(r, v_d, '-.', label='disk')
     ax.plot(r, v_h, ':', label='halo')
 
     vmax = 0
