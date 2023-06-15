@@ -92,10 +92,10 @@ def vel_tot_iso(r, params):
     r_pc = r * 1000
     Rh_pc = Rh * 1000
 
-    Vbulge = bulge_vel(r_pc, rhob0, Rb)
+    Vbulge = bulge_vel(r, rhob0, Rb)
     Vdisk = disk_vel(r, SigD, Rd)
     Vhalo = halo_vel_iso(r_pc, rho0_h, Rh_pc)
-
+    
     v2 = Vbulge ** 2 + Vdisk ** 2 + Vhalo ** 2
 
     return np.sqrt(v2)
@@ -110,7 +110,7 @@ def vel_tot_NFW(r, params):
     r_pc = r * 1000
     Rh_pc = Rh * 1000
 
-    Vbulge = bulge_vel(r_pc, rhob0, Rb)
+    Vbulge = bulge_vel(r, rhob0, Rb)
     Vdisk = disk_vel(r, SigD, Rd)
     Vhalo = halo_vel_NFW(r_pc, rho0_h, Rh_pc)
 
@@ -128,7 +128,7 @@ def vel_tot_bur(r, params):
     r_pc = r * 1000
     Rh_pc = Rh * 1000
 
-    Vbulge = bulge_vel(r_pc, rhob0, Rb)
+    Vbulge = bulge_vel(r, rhob0, Rb)
     Vdisk = disk_vel(r, SigD, Rd)
     Vhalo = halo_vel_Bur(r_pc, rho0_h, Rh_pc)
 

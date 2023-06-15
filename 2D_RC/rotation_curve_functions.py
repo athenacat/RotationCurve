@@ -202,12 +202,12 @@ def mass_integrand(r,a,b):
 def bulge_vel(r,a,b):
     """
     parameters:
-    r (radius): The a distance from the centre (pc)
+    r (radius): The a distance from the centre (kpc)
     a (central density): The central density of the bulge (M/pc^2)
     b (central radius): The central radius of the bulge (kpc)
 
     return: rotational velocity of the bulge (km/s)
-    """
+    
     # integrating to get mass
     if isinstance(r, float):
         bulge_mass, m_err = inte.quad(mass_integrand, 0, r, args=(a, b))
@@ -221,7 +221,13 @@ def bulge_vel(r,a,b):
     # v = sqrt(GM/r) for circular velocity
     vel = np.sqrt(G*(bulge_mass*1.988E30)/(r*3.08E16))
     vel /= 1000
-
+    """
+    x = r / b # unitless
+    F = 1 - np.exp(-x) * (1 + x + x**2 / 2) # unitless
+    M0 = 8 * np.pi * b**3 * a # sol mass
+    coeff_2 = G * M0 * Msun * 1/(1000**3 * 3.086E16)
+    vel = np.sqrt(coeff_2 * F / r)
+    
     return vel
 
 #-------------------------------------------------------------------------------
@@ -495,14 +501,10 @@ def halo_vel_iso(r, rho0_h, Rh):
     :param Rh: The scale radius of the dark matter halo (pc)
     :return: rotational velocity
     '''
-
-    v_inf = np.sqrt((4 * np.pi * G * rho0_h * Msun * Rh ** 2) / 3.086e16)
-    
-    vel = v_inf * np.sqrt(1 - ((Rh/r)*np.arctan2(Rh,r)))
-
+    v_inf= np.sqrt((4 * np.pi * G * rho0_h * Msun * Rh ** 2) / 3.086e16)
+    vel = v_inf * np.sqrt((1 - ((Rh/r)*np.arctan2(r,Rh))))
     return vel/1000
 ################################################################################
-
 
 
 
@@ -591,7 +593,6 @@ def halo_vel_NFW(r, rho0_h, Rh):
 
 
 
-
 ################################################################################
 # halo (Burket)
 #-------------------------------------------------------------------------------
@@ -665,8 +666,8 @@ def vel_h_Burket(r, rho0_h, Rh):
 #-------------------------------------------------------------------------------
 def halo_vel_Bur(r,rho0_h, Rh):
 
-    halo_mass = np.pi * (-rho0_h) * (Rh**3) * (-np.log(Rh**2 + r**2) - 2*np.log(Rh + r) + 2*np.arctan2(Rh,r) + np.log(Rh**2)\
-                                               + 2*np.log(Rh) - 2*np.arctan2(Rh,0))
+    halo_mass = np.pi * (-rho0_h) * (Rh**3) * (-np.log(Rh**2 + r**2) - 2*np.log(Rh + r) + 2*np.arctan2(r,Rh) + np.log(Rh**2)\
+                                               + 2*np.log(Rh) - 2*np.arctan2(0,Rh))
     vel2 = G * (halo_mass * Msun) / (r * 3.08E16)
 
     return np.sqrt(vel2) / 1000

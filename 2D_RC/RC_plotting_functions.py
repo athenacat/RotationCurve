@@ -220,7 +220,7 @@ def plot_rot_curve(mHa_vel,
     # ---------------------------------------------------------------------------
     phi = best_fit_values[7]
     ############################################################################
-
+#[rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
     ############################################################################
     # Deproject all data values in the given velocity map
     # ---------------------------------------------------------------------------
@@ -230,7 +230,7 @@ def plot_rot_curve(mHa_vel,
     v_deproj = np.zeros(vel_array_shape)
 
     theta = np.zeros(vel_array_shape)
-
+    
     for i in range(vel_array_shape[0]):
         for j in range(vel_array_shape[1]):
 
@@ -262,7 +262,7 @@ def plot_rot_curve(mHa_vel,
     # Calculate functional form of rotation curve
     # ---------------------------------------------------------------------------
     r = np.linspace(ma.min(rm_deproj), ma.max(rm_deproj), 100)
-
+    print(r)
     # if fit_function == 'BB':
     # v = rot_fit_BB(r, [best_fit_values['v_max'],
     # best_fit_values['r_turn'],
@@ -277,25 +277,28 @@ def plot_rot_curve(mHa_vel,
 
     for i in range(len(r)):
         if r[i] > 0:
-            v_b[i] = bulge_vel(r[i] * 1000, best_fit_values[0], best_fit_values[1] * 1000)
-            v_d[i] = disk_vel(r[i] * 1000, best_fit_values[2], best_fit_values[3] * 1000)
+            v_b[i] = bulge_vel(r[i], best_fit_values[0], best_fit_values[1])
+            v_d[i] = disk_vel(r[i], best_fit_values[2], best_fit_values[3])
             if halo_model == 'Isothermal':
                 v_h[i] = halo_vel_iso(r[i] * 1000, best_fit_values[4], best_fit_values[5] * 1000)
                 v[i] = vel_tot_iso(r[i], [best_fit_values[0], best_fit_values[1], best_fit_values[2], best_fit_values[3],
                                    best_fit_values[4], best_fit_values[5]])
+                
             elif halo_model == 'NFW':
                 v_h[i] = halo_vel_NFW(r[i] * 1000, best_fit_values[4], best_fit_values[5] * 1000)
                 v[i] = vel_tot_NFW(r[i], [best_fit_values[0], best_fit_values[1], best_fit_values[2], best_fit_values[3],
                                    best_fit_values[4], best_fit_values[5]])
+               
             elif halo_model == 'Burkert':
                 v_h[i] = halo_vel_Bur(r[i] * 1000, best_fit_values[4], best_fit_values[5] * 1000)
                 v[i] = vel_tot_bur(r[i], [best_fit_values[0], best_fit_values[1], best_fit_values[2], best_fit_values[3],
                                    best_fit_values[4], best_fit_values[5]])
+                print(r[i],v_h[i])
             else:
                 print('Fit function not known.  Please update plot_rot_curve function.')
         else:
-            v_b[i] = -bulge_vel(np.abs(r[i] * 1000), best_fit_values[0], best_fit_values[1] * 1000)
-            v_d[i] = -disk_vel(np.abs(r[i] * 1000), best_fit_values[2], best_fit_values[3] * 1000)
+            v_b[i] = -bulge_vel(np.abs(r[i]), best_fit_values[0], best_fit_values[1] )
+            v_d[i] = -disk_vel(np.abs(r[i] ), best_fit_values[2], best_fit_values[3] )
             if halo_model == 'Isothermal':
                 v_h[i] = -halo_vel_iso(np.abs(r[i] * 1000), best_fit_values[4], best_fit_values[5] * 1000)
                 v[i] = -vel_tot_iso(np.abs(r[i]), [best_fit_values[0], best_fit_values[1], best_fit_values[2],
@@ -310,6 +313,7 @@ def plot_rot_curve(mHa_vel,
                                     best_fit_values[3], best_fit_values[4], best_fit_values[5]])
             else:
                 print('Fit function not known.  Please update plot_rot_curve function.')
+           
     ############################################################################
 
     ############################################################################
