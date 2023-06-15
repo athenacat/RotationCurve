@@ -15,7 +15,7 @@ import astropy.units as u
 from scipy.special import kn
 from scipy.special import iv
 
-from galaxy_component_functions import disk_vel, halo_vel_iso
+#from galaxy_component_functions import disk_vel, halo_vel_iso
 
 '''
 import warnings
@@ -202,12 +202,12 @@ def mass_integrand(r,a,b):
 def bulge_vel(r,a,b):
     """
     parameters:
-    r (radius): The a distance from the centre (pc)
-    a (central density): The central density of the bulge (M/pc^2)
+    r (radius): The a distance from the centre (kpc)
+    a (central density): The central density of the bulge (M_sun/pc^2)
     b (central radius): The central radius of the bulge (kpc)
 
-    return: rotational velocity of the bulge (pc/s)
-    """
+    return: rotational velocity of the bulge (km/s)
+    
     # integrating to get mass
     if isinstance(r, float):
         bulge_mass, m_err = inte.quad(mass_integrand, 0, r, args=(a, b))
@@ -221,8 +221,15 @@ def bulge_vel(r,a,b):
     # v = sqrt(GM/r) for circular velocity
     vel = np.sqrt(G*(bulge_mass*1.988E30)/(r*3.08E16))
     vel /= 1000
-
+    """
+    x = r / b # unitless
+    F = 1 - np.exp(-x) * (1 + x + x**2 / 2) # unitless
+    M0 = 8 * np.pi * b**3 * a # sol mass
+    coeff_2 = G * M0 * Msun * 1/(1000**3 * 3.086E16)
+    vel = np.sqrt(coeff_2 * F / r)
+    
     return vel
+
 #-------------------------------------------------------------------------------
 ################################################################################
 
@@ -265,18 +272,39 @@ def disk_mass(function_parameters, r):
 
     Mdisk_err : float
         Uncertainty in the disk mass.  Units are log(solar masses).
+
     '''
 
     SigD = function_parameters['Sigma_disk']*1e6 # Converting from Msun/pc^2 to Msun/kpc^2
-    Rd = function_parameters['R_disk']
+    Rd = function_parameters['R_disk'] #kpc
+    R_bulge = function_parameters['R_bulge'] #kpc
+    rho_bulge = function_parameters['rho_bulge'] #Msun/kpc^3
     
     #Mdisk, Mdisk_err = inte.quad(mass_integrand, 0, r, args=[SigD, Rd])
     Mdisk = 2*np.pi*SigD*Rd*(Rd - np.exp(-r/Rd)*(r + Rd))
 
-    Mdisk_err = np.sqrt((2*np.pi*SigD*Rd*(2*(1 - np.exp(-r/Rd)) - (r/Rd)**2*np.exp(-r/Rd) - 2*(r/Rd)*np.exp(-r/Rd)))**2*function_parameters['Sigma_disk_err']**2 \
-                        + (Mdisk/SigD)**2*function_parameters['R_disk_err']**2)
+    Mdisk_err2 = (4*np.pi*Rd*SigD - 2*np.exp(-r/Rd)*np.pi*SigD*(r**2 + 2*r*Rd +2*Rd**2)/Rd)**2\
+                    * function_parameters['R_disk_err']**2 \
+                    + (Mdisk/SigD)**2 * function_parameters['Sigma_disk_err']**2
+
+    #Mdisk_err2 = (2*np.pi*SigD*Rd*(2*(1 - np.exp(-r/Rd)) - (r/Rd)**2*np.exp(-r/Rd) \
+    #                    - 2*(r/Rd)*np.exp(-r/Rd)))**2*function_parameters['Sigma_disk_err']**2 \
+    #                    + (Mdisk/SigD)**2*function_parameters['R_disk_err']**2
     
-    return np.log10(Mdisk), np.log10(Mdisk_err)
+    x = r/R_bulge
+    F = 1 - np.exp(-x) * (1 + x + x**2 / 2)
+    M_bulge = 8*np.pi*R_bulge**3*rho_bulge*F
+
+    M_bulge_err2= ((4*np.pi*rho_bulge/R_bulge)*(6*R_bulge**3-np.exp(-x) \
+                    *(r**3 + 3*r**2*R_bulge + 6*r*R_bulge**2 + 6*R_bulge**3)))**2 \
+                    * function_parameters['R_bulge_err']**2 \
+                    + ((1 / rho_bulge) * M_bulge)**2 * function_parameters['rho_bulge_err']**2
+
+    Mdisk_tot = M_bulge + Mdisk
+    Mdisk_tot_err = np.sqrt(Mdisk_err2 + M_bulge_err2) 
+
+
+    return np.log10(Mdisk_tot), np.log10(Mdisk_tot_err)
 ################################################################################
 
 
@@ -312,14 +340,65 @@ def disk_vel(r, SigD, Rd):
     :return: The rotational velocity of the disk [km/s]
     '''
     #SigD, Rd = params
+
     
     y = r / (2 * Rd)
 
     bessel_component = (iv(0, y) * kn(0, y) - iv(1, y) * kn(1, y))
     vel2 = (4 *np.pi * G * SigD * y ** 2 * ((Rd*1000)/3.086E16)*Msun) * bessel_component
-
+    #m^3 * kg^-1 * s^-2 * M_sol/pc^2 
+    #3.086E16 = pc/m 
     return np.sqrt(vel2) / 1000
 ################################################################################
+
+def disk_bulge_vel(r, SigD, Rd, rho_bulge, R_bulge):
+    '''
+    Calculate the total mass within some radius r from the disk mass function.
+
+
+    PARAMETERS
+    ==========
+
+    rho_bulge : float
+        bulge central mass density [M_sol/kpc^3]
+
+    R_bulge : float
+        bulge scale radius [kpc]
+
+    r
+        [kpc]
+    
+    SigD : float
+        central surface density for the disk [M_sol/pc^2]
+
+    Rd : float
+        scale radius of disk [kpc]
+        
+    RETURNS
+    =======
+
+    v_disk : velocity of disk and bulge component [km/s]
+    '''
+
+    #v_d = disk_vel(r=r, SigD=SigD, Rd=Rd) #km/s
+
+    coeff = 4 * np.pi * G *SigD *  ((Rd*1000)/3.086E16)*Msun
+    y = r / (2*Rd)
+    bessel_component = (iv(0, y) * kn(0, y) - iv(1, y) * kn(1, y))
+    vd_2 = coeff * y**2 * bessel_component / 10**6
+
+    # bulge component
+    x = r / R_bulge # unitless
+    F = 1 - np.exp(-x) * (1 + x + x**2 / 2) # unitless
+    M0 = 8 * np.pi * R_bulge**3 * rho_bulge # sol mass
+    coeff_2 = G * M0 * Msun * 1/(1000**3 * 3.086E16)
+    #vb_2 = G * M0 * Msun / r * F * 1/(1000**3 * 3.086E16)
+    vb_2 = coeff_2 * F / r
+
+
+    v_disk = np.sqrt(vd_2 + vb_2) #km/s
+    return v_disk
+
 
 
 
@@ -422,14 +501,10 @@ def halo_vel_iso(r, rho0_h, Rh):
     :param Rh: The scale radius of the dark matter halo (pc)
     :return: rotational velocity
     '''
-
-    v_inf = np.sqrt(4*np.pi*G*rho0_h*Rh**2)
-    # the part in the square root would be unitless
-    vel = v_inf * np.sqrt(1 - ((Rh/r)*np.arctan2(Rh,r)))
-
-    return vel
+    v_inf= np.sqrt((4 * np.pi * G * rho0_h * Msun * Rh ** 2) / 3.086e16)
+    vel = v_inf * np.sqrt((1 - ((Rh/r)*np.arctan2(r,Rh))))
+    return vel/1000
 ################################################################################
-
 
 
 
@@ -518,7 +593,6 @@ def halo_vel_NFW(r, rho0_h, Rh):
 
 
 
-
 ################################################################################
 # halo (Burket)
 #-------------------------------------------------------------------------------
@@ -592,8 +666,9 @@ def vel_h_Burket(r, rho0_h, Rh):
 #-------------------------------------------------------------------------------
 def halo_vel_Bur(r,rho0_h, Rh):
 
-    halo_mass = np.pi * (-rho0_h) * (Rh**3) * (-np.log(Rh**2 + r**2) - 2*np.log(Rh + r) + 2*np.arctan2(Rh,r) + np.log(Rh**2)\
-                                               + 2*np.log(Rh) - 2*np.arctan2(Rh,0))
+    halo_mass = np.pi * (-rho0_h) * (Rh**3) * (-np.log(Rh**2 + r**2) - 2*np.log(Rh + r) + 2*np.arctan2(r,Rh) + np.log(Rh**2)\
+                                               + 2*np.log(Rh) - 2*np.arctan2(0,Rh))
+    
     vel2 = G * (halo_mass * Msun) / (r * 3.08E16)
 
     return np.sqrt(vel2) / 1000
