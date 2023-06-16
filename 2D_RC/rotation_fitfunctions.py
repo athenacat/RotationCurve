@@ -131,7 +131,6 @@ def vel_tot_bur(r, params):
     Vbulge = bulge_vel(r, rhob0, Rb)
     Vdisk = disk_vel(r, SigD, Rd)
     Vhalo = halo_vel_Bur(r_pc, rho0_h, Rh_pc)
-
     v2 = Vbulge ** 2 + Vdisk ** 2 + Vhalo ** 2
 
     return np.sqrt(v2)
@@ -256,29 +255,28 @@ def rot_incl_bur(shape, scale, params):
             r = np.sqrt(x ** 2 + y ** 2)
             theta = np.arctan2(-x, y)
             r_in_kpc = r * scale
-            if r !=0:
-                v = vel_tot_bur(r_in_kpc, [rhob0, Rb, SigD, Rd, rho0_h, Rh]) * np.sin(inclination) * np.cos(theta)
-            else:
-                v = 0    
+            v = vel_tot_bur(r_in_kpc, [rhob0, Rb, SigD, Rd, rho0_h, Rh]) * np.sin(inclination) * np.cos(theta)
             rotated_inclined_map[i, j] = v + vsys
-
+    
     return rotated_inclined_map
 
 
 def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
+    
     incl, ph, x_guess, y_guess = params
+    print(incl)
     # Isothermal Fitting
     bounds_iso = [[-7, 2],  # Halo density [log(Msun/pc^3)]
-                  [0.1, 1000],  # Halo radius [kpc]
-                  [0.1, 0.436 * np.pi],  # Inclination angle
+                  [1, 1000],  # Halo radius [kpc]
+                  [incl-(np.pi/6), 0.46*np.pi],  # Inclination angle
                   [0, 2.2 * np.pi],  # Phase angle
-                  [x_guess - 10, x_guess + 10],  # center_x
-                  [y_guess - 10, y_guess + 10],  # center_y
+                  [x_guess - 5, x_guess + 5],  # center_x
+                  [y_guess - 5, y_guess + 5],  # center_y
                   [-100, 100]]  # systemic velocity
 
     vsys = 0
-
-    ig_iso = [-3, 25, incl, ph, x_guess, y_guess, vsys]
+    print(bounds_iso)
+    ig_iso = [-1.5, 10, incl, ph, x_guess, y_guess, vsys]
     bestfit_iso = minimize(nloglikelihood_iso_flat,
                            ig_iso,
                            args=(rhob, Rb, SigD, Rd, scale, shape,
@@ -295,7 +293,7 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
 def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
     incl, ph, x_guess, y_guess = params
 
-    bounds_nfw = [[-7, 2],  # Halo density [log(Msun/pc^3)]
+    bounds_nfw = [[-4, 2],  # Halo density [log(Msun/pc^3)]
                   [0.1, 1000],  # Halo radius [kpc]
                   [0.1, 0.436 * np.pi],  # Inclination angle
                   [0, 2.2 * np.pi],  # Phase angle
@@ -303,9 +301,9 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                   [y_guess - 10, y_guess + 10],  # center_y
                   [-100, 100]]  # systemic velocity
 
-    vsys = 0
+    vsys = 20
 
-    ig_NFW = [-3, 25, incl, ph, x_guess, y_guess, vsys]
+    ig_NFW = [-2,35, incl, ph, x_guess, y_guess, vsys]
     # ig_iso = [-1, 1, 1000, 4, 0.001, 25, incl, ph, x_guess, y_guess, vsys]
     # ig_iso = [0.0001, 4, 2000, 25, 5, 250, incl, ph, x_guess, y_guess, vsys]
     # print(ig_iso)
@@ -328,24 +326,95 @@ def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
 
     bounds_bur = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [0.1, 1000],  # Halo radius [kpc]
-                  [0.1, 0.436 * np.pi],  # Inclination angle
+                  [incl-(np.pi/6), 0.46*np.pi],  # Inclination angle
                   [0, 2.2 * np.pi],  # Phase angle
                   [x_guess - 10, x_guess + 10],  # center_x
                   [y_guess - 10, y_guess + 10],  # center_y
                   [-100, 100]]  # systemic velocity
 
     vsys = 0
-
-    ig_bur = [-3, 25, incl, ph, x_guess, y_guess, vsys]
-
+    
+    #ig_bur = [-3, 25, incl, ph, x_guess, y_guess, vsys]
+    ig_bur = [-1.5, 40, incl, ph, x_guess, y_guess, vsys]
     bestfit_bur = minimize(nloglikelihood_bur_flat,
                            ig_bur,
                            args=(rhob, Rb, SigD, Rd, scale, shape,
                                  vmap.compressed(),
                                  ivar.compressed(), mask),
                            method='Powell',
-                           bounds=bounds_bur)
+                           bounds=bounds_bur)#,options = opts)
     print('---------------------------------------------------')
     print(bestfit_bur)
 
     return bestfit_bur.x
+
+def chi2(vmap, ivar, vmask, shape, scale, best_fit, fit_function):
+    """
+    Calculates the chi2 and reduced chi2 values of the total velocity curve fit
+    
+    Parameters:
+    
+    vmap: Masked Ha velocity map
+    
+    ivar: Masked array of the inverse variance of the Ha velocity map
+    
+    vmask: mask of the velocity map
+    
+    shape: shape of the velocity map
+    
+    scale: scale factor for converting spaxel radii to kpc
+    
+    best_fit: list of fitted parameters of velocity curve, 
+        [rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
+            rhob: central density of the bulge (M_sun/kpc^3)
+            Rb: scale radius of the bulge (kpc)
+            SigD: central density of the disk (M_sun/pc^2) 
+            Rd:   scale radius of the disk (kpc)
+            rho0_h: central density of the halo (log(M_sun/pc^3)
+            Rh: scale radious of the halo (kpc)
+            incl: inclination angle (radians)
+            phi: rotation angle E of N (radians)
+            x_center: x center spaxel
+            y_center: y center spaxel
+            vsys: systematic velocity of the galaxy (km/s)
+        
+    fit_function: halo model used in the fit. Options are "Isothermal", "NFW", and "Burkert"    
+    
+    
+    """
+    #Calculating the modeled velocity map
+    
+    if fit_function == "Isothermal":
+        
+        v_tot_map = ma.array(rot_incl_iso(shape, scale, best_fit), mask=vmask)
+    
+    elif fit_function == "NFW":
+        
+        v_tot_map = ma.array(rot_incl_NFW(shape, scale, best_fit), mask=vmask)
+    
+    elif fit_function == "Burkert":
+        
+        v_tot_map = ma.array(rot_incl_bur(shape, scale, best_fit), mask=vmask)
+    else:
+        print("Fit function not known")
+    ###################################################
+    
+    x = ma.array((vmap - v_tot_map)**2 * ivar**2, mask = vmask)
+    n = x.count()
+    chi2 = ma.sum(x)
+    chi2r = chi2 / (n - 7)
+    
+    return chi2, chi2r
+
+    
+    
+    
+    
+        
+        
+        
+        
+        
+        
+        
+    

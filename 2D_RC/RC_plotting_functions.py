@@ -190,9 +190,9 @@ def plot_rot_curve(mHa_vel,
     gal_ID : string
         MaNGA <plate>-<IFU> for the current galaxy
 
-    fit_function : string
-        Determines which function to use for the velocity.  Options are 'BB' and
-        'tanh'.
+    halo_model : string
+        Determines which function to use for the velocity.  Options are 'Isothermal','NFW', and
+        'Burkert'.
 
     IMAGE_DIR : str
         Path of directory in which to store plot.
@@ -210,17 +210,17 @@ def plot_rot_curve(mHa_vel,
         fig, ax = plt.subplots(figsize=(3, 3))
 
     ############################################################################
-    # Convert axis ratio to angle of inclination
+    # Extract inclination angle (in radians)
     # ---------------------------------------------------------------------------
     i_angle = best_fit_values[6]  # np.arccos(best_fit_values['ba'])
     ############################################################################
 
     ############################################################################
-    # Convert rotation angle from degrees to radians
+    # Extract rotation angle (in radians)
     # ---------------------------------------------------------------------------
     phi = best_fit_values[7]
     ############################################################################
-#[rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
+    #[rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
     ############################################################################
     # Deproject all data values in the given velocity map
     # ---------------------------------------------------------------------------
@@ -250,6 +250,7 @@ def plot_rot_curve(mHa_vel,
     r_deproj *= scale
 
     # Deproject velocity values
+    
     v_deproj = (mHa_vel - best_fit_values[10]) / np.abs(np.cos(theta))
     v_deproj /= np.sin(i_angle)
 
@@ -261,59 +262,29 @@ def plot_rot_curve(mHa_vel,
     ############################################################################
     # Calculate functional form of rotation curve
     # ---------------------------------------------------------------------------
-    r = np.linspace(ma.min(rm_deproj), ma.max(rm_deproj), 100)
-    print(r)
-    # if fit_function == 'BB':
-    # v = rot_fit_BB(r, [best_fit_values['v_max'],
-    # best_fit_values['r_turn'],
-    # best_fit_values['alpha']])
-    # elif fit_function == 'tanh':
-    # v = rot_fit_tanh(r, [best_fit_values['v_max'],
-    # best_fit_values['r_turn']])
-    v_b = np.zeros(len(r))
-    v_d = np.zeros(len(r))
-    v_h = np.zeros(len(r))
-    v = np.zeros(len(r))
-
-    for i in range(len(r)):
-        if r[i] > 0:
-            v_b[i] = bulge_vel(r[i], best_fit_values[0], best_fit_values[1])
-            v_d[i] = disk_vel(r[i], best_fit_values[2], best_fit_values[3])
-            if halo_model == 'Isothermal':
-                v_h[i] = halo_vel_iso(r[i] * 1000, best_fit_values[4], best_fit_values[5] * 1000)
-                v[i] = vel_tot_iso(r[i], [best_fit_values[0], best_fit_values[1], best_fit_values[2], best_fit_values[3],
-                                   best_fit_values[4], best_fit_values[5]])
-                
-            elif halo_model == 'NFW':
-                v_h[i] = halo_vel_NFW(r[i] * 1000, best_fit_values[4], best_fit_values[5] * 1000)
-                v[i] = vel_tot_NFW(r[i], [best_fit_values[0], best_fit_values[1], best_fit_values[2], best_fit_values[3],
-                                   best_fit_values[4], best_fit_values[5]])
-               
-            elif halo_model == 'Burkert':
-                v_h[i] = halo_vel_Bur(r[i] * 1000, best_fit_values[4], best_fit_values[5] * 1000)
-                v[i] = vel_tot_bur(r[i], [best_fit_values[0], best_fit_values[1], best_fit_values[2], best_fit_values[3],
-                                   best_fit_values[4], best_fit_values[5]])
-                print(r[i],v_h[i])
-            else:
-                print('Fit function not known.  Please update plot_rot_curve function.')
-        else:
-            v_b[i] = -bulge_vel(np.abs(r[i]), best_fit_values[0], best_fit_values[1] )
-            v_d[i] = -disk_vel(np.abs(r[i] ), best_fit_values[2], best_fit_values[3] )
-            if halo_model == 'Isothermal':
-                v_h[i] = -halo_vel_iso(np.abs(r[i] * 1000), best_fit_values[4], best_fit_values[5] * 1000)
-                v[i] = -vel_tot_iso(np.abs(r[i]), [best_fit_values[0], best_fit_values[1], best_fit_values[2],
-                                    best_fit_values[3], best_fit_values[4], best_fit_values[5]])
-            elif halo_model == 'NFW':
-                v_h[i] = -halo_vel_NFW(np.abs(r[i] * 1000), best_fit_values[4], best_fit_values[5] * 1000)
-                v[i] = -vel_tot_NFW(np.abs(r[i]), [best_fit_values[0], best_fit_values[1], best_fit_values[2],
-                                    best_fit_values[3], best_fit_values[4], best_fit_values[5]])
-            elif halo_model == 'Burkert':
-                v_h[i] = -halo_vel_Bur(np.abs(r[i] * 1000), best_fit_values[4], best_fit_values[5] * 1000)
-                v[i] = -vel_tot_bur(np.abs(r[i]), [best_fit_values[0], best_fit_values[1], best_fit_values[2],
-                                    best_fit_values[3], best_fit_values[4], best_fit_values[5]])
-            else:
-                print('Fit function not known.  Please update plot_rot_curve function.')
-           
+    #r = np.linspace(ma.min(rm_deproj), ma.max(rm_deproj), 100)
+    r = np.linspace(0, ma.max(rm_deproj), 100)
+    
+    #v_b = np.zeros(len(r))
+    v_b = bulge_vel(r, best_fit_values[0], best_fit_values[1])
+    
+    #v_d = np.zeros(len(r))
+    v_d = disk_vel(r, best_fit_values[2], best_fit_values[3])
+    
+    if halo_model == 'Isothermal':
+        v_h = halo_vel_iso(r*1000,10**best_fit_values[4], best_fit_values[5] * 1000)
+    elif halo_model == 'NFW':
+        v_h = halo_vel_NFW(r*1000,10**best_fit_values[4], best_fit_values[5] * 1000)
+    elif halo_model == 'Burkert':
+        v_h = halo_vel_Bur(r*1000,10**best_fit_values[4], best_fit_values[5] * 1000)
+    else:
+        print('Fit function not known.  Please update plot_rot_curve function.')
+        
+    v = np.sqrt(v_b**2 + v_d**2 + v_h**2)
+    #v_h = np.zeros(len(r))
+    
+    #v = np.zeros(len(r))
+    
     ############################################################################
 
     ############################################################################
@@ -322,15 +293,16 @@ def plot_rot_curve(mHa_vel,
     ax.set_title(gal_ID + ' ' + halo_model)
 
     ax.plot(rm_deproj, vm_deproj, 'k.', markersize=1)
-    ax.plot(r, v, 'c', label='v tot')
-    ax.plot(r, v_b, '--', label='bulge')
-    ax.plot(r, v_d, '-.', label='disk')
-    ax.plot(r, v_h, ':', label='halo')
-
-    vmax = 0
-
-    if np.isfinite(np.max(np.abs(v))):
-        vmax = np.max(np.abs(v))
+    ax.plot(np.concatenate((-r, r)), np.concatenate((-v, v)), 'c', label='$v_{tot}$')
+    ax.plot(np.concatenate((-r, r)), np.concatenate((-v_b, v_b)), '--', label='bulge')
+    
+    ax.plot(np.concatenate((-r, r)), np.concatenate((-v_d, v_d)), '-.', label='disk')
+    ax.plot(np.concatenate((-r, r)), np.concatenate((-v_h, v_h)), ':', label='halo')
+    
+    
+    vmax = np.nanmax(v)
+    print(vmax)
+    if np.isfinite(vmax):
         ax.set_ylim([-1.25 * vmax, 1.25 * vmax])
         ax.tick_params(axis='both', direction='in')
         ax.yaxis.set_ticks_position('both')
@@ -351,72 +323,12 @@ def plot_rot_curve(mHa_vel,
     ############################################################################
 
 
-"""
-################################################################################
-def plot_fits(ID, vmasked, ivar_masked, scale, shape, Isothermal_Fit, NFW_Fit, Burket_Fit, mask):
-    plt.figure(figsize=(12,12))
-    plt.subplot(2,2,1)
-    plt.imshow(vmasked,origin='lower',cmap='RdBu_r')
-    plt.title(ID + ' Data Map')
 
-    cbar = plt.colorbar()
-    cbar.set_label('km/s')
-
-    plt.subplot(2,2,2)
-    plt.imshow(ma.array(rot_incl_iso(shape, scale, Isothermal_Fit), mask=mask), 
-               origin='lower', 
-               cmap='RdBu_r')
-
-    plt.xlabel('spaxel')
-    plt.ylabel('spaxel')
-    plt.title(ID + ' Isothermal Fit')
-
-    plt.xlabel('spaxel')
-    plt.ylabel('spaxel')
-
-    cbar = plt.colorbar()
-    cbar.set_label('km/s')
-
-
-    plt.subplot(2,2,3)
-    plt.imshow(ma.array(rot_incl_NFW(shape, scale, NFW_Fit), mask=mask),
-               origin='lower',
-               cmap='RdBu_r')
-
-    plt.xlabel('spaxel')
-    plt.ylabel('spaxel')
-    plt.title(ID + ' NFW Fit')
-
-    cbar = plt.colorbar()
-    cbar.set_label('km/s')
-
-    plt.subplot(2,2,4)
-    plt.imshow(ma.array(rot_incl_bur(shape, scale, Burket_Fit), mask=mask), 
-               origin='lower', 
-               cmap='RdBu_r')
-
-    plt.xlabel('spaxel')
-    plt.ylabel('spaxel')
-    plt.title(ID + ' Burket Fit')
-
-    cbar = plt.colorbar()
-    cbar.set_label('km/s')
-
-
-    plt.suptitle('Fit Analysis ' + ID)
-    plt.savefig('Fit Analysis ' + ID + '.png', format='png')
-    plt.close()
-
-################################################################################
-"""
 
 
 def plot_diagnostic_panel(ID, shape, scale, Isothermal_Fit, NFW_Fit, Burket_Fit, mask, vmasked, ivar_masked):
     '''
-    Plot a two by two paneled image containging the entire r-band array, the
-    masked H-alpha array, the masked H-alpha array containing ovals of the
-    spaxels processed in the algorithm, and the averaged max and min rotation
-    curves along with the stellar mass rotation curve.
+    Plot a set of 6 plots: modeled 2d velocity maps and decomposed velocity vs deprojected radius plots for all three halo models
 
 
     Parameters
@@ -425,25 +337,29 @@ def plot_diagnostic_panel(ID, shape, scale, Isothermal_Fit, NFW_Fit, Burket_Fit,
     gal_ID : string
         MaNGA plate number - MaNGA fiberID number
 
-    r_band : numpy array of shape (n,n)
-        r_band flux map
+    shape: float
+        shape of the velocity map
+        
+    scale: float
+        conversion factor from spaxel to kpc
+        
+    Isothermal_Fit: dictionary
+        isothermal best fit values
+    
+    NFW_Fit : dictionary
+        NFW best fit values
+    
+    Burket_Fit: dictionary
+        Burkert best fit values
 
-    masked_Ha_vel : numpy array of shape (n,n)
+    vmasked : numpy array
         Masked H-alpha velocity map
 
-    masked_vel_contour_plot : numpy array of shape (n,n)
-        Masked H-alpha velocity map showing only those spaxels within annuli
-
-    data_table : Astropy QTable
-        Table containing measured rotational velocities at given deprojected
-        radii
-
-    IMAGE_DIR : string
-        Path of directory to store images.  Default is None (does not save
-        figure)
-
-    IMAGE_FORMAT : string
-        Format of saved image.  Default is 'eps'
+    ivar_masked: numpy array
+        Masked inverse variance of H-alpha velocity map
+    
+    
+    
     '''
 
     #    panel_fig, (( Ha_vel_panel, mHa_vel_panel),
@@ -459,11 +375,11 @@ def plot_diagnostic_panel(ID, shape, scale, Isothermal_Fit, NFW_Fit, Burket_Fit,
     Plotting_NFW(ID, shape, scale, NFW_Fit, mask, ax=NFW_Plot_panel)
 
     Plotting_Burkert(ID, shape, scale, Burket_Fit, mask, ax=Burket_Plot_panel)
-
+    print("Iso:",Isothermal_Fit)
     plot_rot_curve(vmasked, ivar_masked, Isothermal_Fit, scale, ID, 'Isothermal', ax=RC_Isothermal)
-
+    print("NFW",NFW_Fit)
     plot_rot_curve(vmasked, ivar_masked, NFW_Fit, scale, ID, 'NFW', ax=RC_NFW)
-
+    print("Bur:",Burket_Fit)
     plot_rot_curve(vmasked, ivar_masked, Burket_Fit, scale, ID, 'Burkert', ax=RC_Burket)
 
     panel_fig.tight_layout()
