@@ -326,7 +326,7 @@ def plot_rot_curve(mHa_vel,
 
 
 
-def plot_diagnostic_panel(ID, shape, scale, Isothermal_Fit, NFW_Fit, Burket_Fit, mask, vmasked, ivar_masked):
+def plot_diagnostic_panel(ID, shape, scale, Isothermal_Fit, NFW_Fit, Burket_Fit, mask, vmasked, ivar_masked ):
     '''
     Plot a set of 6 plots: modeled 2d velocity maps and decomposed velocity vs deprojected radius plots for all three halo models
 

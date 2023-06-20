@@ -1,10 +1,18 @@
 
-
 import numpy as np
 import numpy.ma as ma
 
 from scipy.optimize import minimize
+
+#from RC_plotting_functions import plot_diagnostic_panel
+from disk_mass import calc_mass_curve, fit_mass_curve
 from rotation_curve_functions import bulge_vel, disk_vel, halo_vel_iso, halo_vel_NFW, halo_vel_Bur
+
+
+H_0 = 100  # Hubble's Constant in units of h km/s/Mpc
+c = 299792.458  # Speed of light in units of km/s
+
+
 
 def find_phi(center_coords, phi_angle, vel_map):
     '''
@@ -202,7 +210,7 @@ def nloglikelihood_bur_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat
 
 def rot_incl_iso(shape, scale, params):
     rhob0, Rb, SigD, Rd, logrho0_h, Rh, inclination, phi, center_x, center_y, vsys = params
-    rho0_h = np.power(10,logrho0_h)
+    rho0_h = np.power(10 ,logrho0_h)
     rotated_inclined_map = np.zeros(shape, dtype=float)
 
     for i in range(shape[0]):
@@ -263,12 +271,12 @@ def rot_incl_bur(shape, scale, params):
 
 def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
     
-    incl, ph, x_guess, y_guess = params
+    rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
     print(incl)
     # Isothermal Fitting
     bounds_iso = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [1, 1000],  # Halo radius [kpc]
-                  [incl-(np.pi/6), 0.46*np.pi],  # Inclination angle
+                  [incl -(np.pi /6), 0.46 *np.pi],  # Inclination angle
                   [0, 2.2 * np.pi],  # Phase angle
                   [x_guess - 5, x_guess + 5],  # center_x
                   [y_guess - 5, y_guess + 5],  # center_y
@@ -276,7 +284,7 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
 
     vsys = 0
     print(bounds_iso)
-    ig_iso = [-1.5, 10, incl, ph, x_guess, y_guess, vsys]
+    ig_iso = [rho_h, Rh, incl, ph, x_guess, y_guess, vsys]
     bestfit_iso = minimize(nloglikelihood_iso_flat,
                            ig_iso,
                            args=(rhob, Rb, SigD, Rd, scale, shape,
@@ -285,13 +293,13 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                            method='Powell',
                            bounds=bounds_iso)
     print('---------------------------------------------------')
-    print(bestfit_iso)
+    print(bestfit_iso.status,bestfit_iso.x)
 
     return bestfit_iso.x
 
 
 def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
-    incl, ph, x_guess, y_guess = params
+    rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
 
     bounds_nfw = [[-4, 2],  # Halo density [log(Msun/pc^3)]
                   [0.1, 1000],  # Halo radius [kpc]
@@ -303,7 +311,7 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
 
     vsys = 20
 
-    ig_NFW = [-2,35, incl, ph, x_guess, y_guess, vsys]
+    ig_NFW = [rho_h, Rh, incl, ph, x_guess, y_guess, vsys]
     # ig_iso = [-1, 1, 1000, 4, 0.001, 25, incl, ph, x_guess, y_guess, vsys]
     # ig_iso = [0.0001, 4, 2000, 25, 5, 250, incl, ph, x_guess, y_guess, vsys]
     # print(ig_iso)
@@ -316,36 +324,34 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                            method='Powell',
                            bounds=bounds_nfw)
     print('---------------------------------------------------')
-    print(bestfit_NFW)
+    print(bestfit_NFW.status,bestfit_NFW.x)
 
     return bestfit_NFW.x
 
 
 def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
-    incl, ph, x_guess, y_guess = params
+    rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
 
     bounds_bur = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [0.1, 1000],  # Halo radius [kpc]
-                  [incl-(np.pi/6), 0.46*np.pi],  # Inclination angle
+                  [incl -(np.pi /6), 0.46 *np.pi],  # Inclination angle
                   [0, 2.2 * np.pi],  # Phase angle
                   [x_guess - 10, x_guess + 10],  # center_x
                   [y_guess - 10, y_guess + 10],  # center_y
                   [-100, 100]]  # systemic velocity
 
-    vsys = 0
     
-    #ig_bur = [-3, 25, incl, ph, x_guess, y_guess, vsys]
-    ig_bur = [-1.5, 40, incl, ph, x_guess, y_guess, vsys]
+    ig_bur = [rho_h, Rh, incl, ph, x_guess, y_guess, vsys]
     bestfit_bur = minimize(nloglikelihood_bur_flat,
                            ig_bur,
                            args=(rhob, Rb, SigD, Rd, scale, shape,
                                  vmap.compressed(),
                                  ivar.compressed(), mask),
                            method='Powell',
-                           bounds=bounds_bur)#,options = opts)
-    print('---------------------------------------------------')
-    print(bestfit_bur)
-
+                           bounds=bounds_bur  )  # ,options = opts)
+    #print('---------------------------------------------------')
+    print(bestfit_bur.status,bestfit_bur.x)
+    
     return bestfit_bur.x
 
 def chi2(vmap, ivar, vmask, shape, scale, best_fit, fit_function):
@@ -382,7 +388,7 @@ def chi2(vmap, ivar, vmask, shape, scale, best_fit, fit_function):
     
     
     """
-    #Calculating the modeled velocity map
+    # Calculating the modeled velocity map
     
     if fit_function == "Isothermal":
         
@@ -399,22 +405,16 @@ def chi2(vmap, ivar, vmask, shape, scale, best_fit, fit_function):
         print("Fit function not known")
     ###################################################
     
-    x = ma.array((vmap - v_tot_map)**2 * ivar**2, mask = vmask)
+    x = ma.array((vmap - v_tot_map ) ** 2 * ivar ** 2, mask = vmask)
     n = x.count()
     chi2 = ma.sum(x)
     chi2r = chi2 / (n - 7)
     
     return chi2, chi2r
 
+
     
     
-    
-    
-        
-        
-        
-        
-        
-        
+
         
     
