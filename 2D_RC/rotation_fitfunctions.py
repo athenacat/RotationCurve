@@ -94,6 +94,18 @@ def find_phi(center_coords, phi_angle, vel_map):
 
     return phi_adjusted
 
+def find_inclination(axis_ratio):
+    incl = np.arccos(np.sqrt((np.power(axis_ratio,2) - 0.2**2)/(1-0.2**2)))
+    return incl
+
+
+def find_axis_ratio(incli):
+    axis_ratio = np.sqrt((np.power(np.cos(incli),2) * (1-0.2**2)) + 0.2**2)
+    return axis_ratio
+find_axis_ratio(find_inclination(0.5))
+
+
+
 def vel_tot_iso(r, params):
     rhob0, Rb, SigD, Rd, rho0_h, Rh = params
 
@@ -293,7 +305,7 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                            method='Powell',
                            bounds=bounds_iso)
     print('---------------------------------------------------')
-    print(bestfit_iso.status,bestfit_iso.x)
+    print("Status:",bestfit_iso.status," fit:",bestfit_iso.x)
 
     return bestfit_iso.x
 
@@ -324,7 +336,7 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                            method='Powell',
                            bounds=bounds_nfw)
     print('---------------------------------------------------')
-    print(bestfit_NFW.status,bestfit_NFW.x)
+    print("Status:",bestfit_NFW.status," fit:",bestfit_NFW.x)
 
     return bestfit_NFW.x
 
@@ -350,7 +362,7 @@ def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                            method='Powell',
                            bounds=bounds_bur  )  # ,options = opts)
     #print('---------------------------------------------------')
-    print(bestfit_bur.status,bestfit_bur.x)
+    print("Status:",bestfit_bur.status," fit:",bestfit_bur.x)
     
     return bestfit_bur.x
 

@@ -4,7 +4,7 @@ from astropy.table import Table
 import astropy.units as u
 
 from DRP_rotation_curve_functions import calc_stellar_mass, calc_velocity
-import scipy.special
+
 
 from rotation_curve_functions import disk_vel, disk_bulge_vel
 
@@ -112,6 +112,7 @@ def find_mass_curve(z,
     ellipse = (x_diff * np.cos(phi_elip) - y_diff * np.sin(phi_elip)) ** 2 \
               + (x_diff * np.sin(phi_elip) + y_diff * np.cos(phi_elip)) ** 2 \
               / ba ** 2
+    
     ############################################################################
 
     ############################################################################
@@ -136,7 +137,7 @@ def find_mass_curve(z,
 
     ############################################################################
     # ---------------------------------------------------------------------------
-    dR = 1
+    dR = 2
     R = 2
 
     while True:
