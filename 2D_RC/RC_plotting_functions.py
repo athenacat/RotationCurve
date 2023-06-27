@@ -301,7 +301,7 @@ def plot_rot_curve(mHa_vel,
     
     
     vmax = np.nanmax(v)
-    print("Vmax:",vmax)
+    print(vmax)
     if np.isfinite(vmax):
         ax.set_ylim([-1.25 * vmax, 1.25 * vmax])
         ax.tick_params(axis='both', direction='in')

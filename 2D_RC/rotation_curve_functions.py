@@ -203,7 +203,7 @@ def bulge_vel(r,a,b):
     """
     parameters:
     r (radius): The a distance from the centre (kpc)
-    a (central density): The central density of the bulge (M_sun/pc^2)
+    a (central density): The central density of the bulge (M/pc^2)
     b (central radius): The central radius of the bulge (kpc)
 
     return: rotational velocity of the bulge (km/s)
@@ -668,7 +668,6 @@ def halo_vel_Bur(r,rho0_h, Rh):
 
     halo_mass = np.pi * (-rho0_h) * (Rh**3) * (-np.log(Rh**2 + r**2) - 2*np.log(Rh + r) + 2*np.arctan2(r,Rh) + np.log(Rh**2)\
                                                + 2*np.log(Rh) - 2*np.arctan2(0,Rh))
-    
     vel2 = G * (halo_mass * Msun) / (r * 3.08E16)
 
     return np.sqrt(vel2) / 1000

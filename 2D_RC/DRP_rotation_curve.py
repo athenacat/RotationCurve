@@ -43,7 +43,11 @@ from DRP_rotation_curve_functions import build_mask, \
                                          find_rot_curve, \
                                          put_data_in_QTable
 
-
+from DRP_rotation_curve_plottingFunctions import plot_rband_image, \
+                                                 plot_vel, \
+                                                 plot_rot_curve, \
+                                                 plot_mass_curve, \
+                                                 plot_diagnostic_panel
 ################################################################################
 
 
@@ -88,12 +92,12 @@ def extract_data( DRP_FOLDER, gal_ID, which_maps):
     """
 
     [plate, IFU] = gal_ID.split('-')
-    # file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
+    # for dr15:
     # file_name = DRP_FOLDER + '/manga-' + gal_ID + '-MAPS-HYB10-GAU-MILESHC.fits.gz'
 
     # for dr17:
-    file_name = DRP_FOLDER + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
-
+    file_name = DRP_FOLDER + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
+    print(file_name)
     # for sciserver
     #file_name = DRP_FOLDER + '/' + plate + '/' + IFU + '/manga-' + gal_ID + '-MAPS-HYB10-MILESHC-MASTARSSP.fits.gz'
 
@@ -165,9 +169,9 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
     '''
 
     [plate, IFU] = gal_ID.split('-')
-    #pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
-    pipe3d_filename = PIPE3D_FOLDER + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz' #use this for sMass
-
+    pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.SSP.fits.gz'
+    #pipe3d_filename = PIPE3D_FOLDER + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz' #use this for sMass
+    print(pipe3d_filename)
     # for sciserver
     #pipe3d_filename = PIPE3D_FOLDER + '/' + plate + '/manga-' + gal_ID + '.Pipe3D.cube.fits.gz'
 
@@ -176,7 +180,8 @@ def extract_Pipe3d_data( PIPE3D_FOLDER, gal_ID):
         return None
 
     main_file = fits.open( pipe3d_filename)
-    ssp = main_file[1].data
+  
+    ssp = main_file[0].data #on bluehive index = 0, for full cube index = 1
     main_file.close()
 
     sMass_density = ssp[19] * u.dex( u.M_sun)
