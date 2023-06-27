@@ -203,7 +203,7 @@ cpdef DTYPE_F64_t bulge_vel(DTYPE_F64_t r,
 
     r : The distance from the center [pc]
 
-    log_rhob0 : log10(central bulge density) log([M_sol/pc^3])
+    log_rhob0 : log(central bulge density) [log(M_sol/pc^3)]
 
     Rb : The scale radius of the bulge [pc]
 
@@ -449,6 +449,58 @@ cpdef DTYPE_F64_t halo_vel_bur(DTYPE_F64_t r,
 
 
 ################################################################################
+# total velocity for the bulge and disk components
+#-------------------------------------------------------------------------------
+cpdef DTYPE_F64_t disk_bulge_vel(DTYPE_F64_t r, 
+                                 DTYPE_F64_t log_rhob0, 
+                                 DTYPE_F64_t Rb,
+                                 DTYPE_F64_t SigD, 
+                                 DTYPE_F64_t Rd):
+    '''
+    Function to calculate the total velocity due to a bulge and disk 
+    component.
+
+
+    PARAMETERS
+    ==========
+
+    r : The distance from the center [kpc]
+
+    SigD : Central surface density for the disk [M_sol/pc^2]
+
+    Rd : The scale radius of the disk [kpc]
+
+    log_rhob0 : The logarithm of the central surface mass density of the bulge
+        [log(M_sol/pc^3)]
+
+    Rb : The scale radius of the bulge [kpc]
+
+
+    RETURNS
+    =======
+
+    Vstar : velocity of the bulge and disk components [km/s]
+    '''
+
+    cdef DTYPE_F64_t Vbulge
+    cdef DTYPE_F64_t Vdisk
+    cdef DTYPE_F64_t Vstar
+    cdef DTYPE_F64_t v2
+
+    Vbulge = bulge_vel(r * 1000.0, log_rhob0, Rb * 1000.0)
+    Vdisk = disk_vel(r * 1000.0, SigD, Rd * 1000.0)
+
+    v2 = Vbulge**2 + Vdisk**2
+
+    Vstar = sqrt(v2)
+
+    return Vstar
+################################################################################
+
+
+
+
+################################################################################
 # total Isothermal velocity
 #-------------------------------------------------------------------------------
 cpdef DTYPE_F64_t vel_tot_iso(DTYPE_F64_t r, 
@@ -469,7 +521,7 @@ cpdef DTYPE_F64_t vel_tot_iso(DTYPE_F64_t r,
     r : The distance from the center [kpc]
 
     log_rhob0 : The logarithm of the central surface mass density of the bulge 
-        [log(M_sol/pc^2)]
+        [log(M_sol/pc^3)]
 
     Rb : The scale radius of the bulge [kpc]
 
