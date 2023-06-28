@@ -9,7 +9,7 @@ from disk_mass import calc_mass_curve, fit_mass_curve
 #from rotation_curve_functions import bulge_vel, disk_vel, halo_vel_iso, halo_vel_NFW, halo_vel_Bur
 
 import sys
-sys.path.insert(1,"/gpfs/fs1/home/lstroud3/Documents/RotationCurve/main/")
+sys.path.insert(1,"main/")
 from Velocity_Map_Functions_cython import rot_incl_iso, rot_incl_bur, rot_incl_NFW
 
 H_0 = 100  # Hubble's Constant in units of h km/s/Mpc
