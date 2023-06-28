@@ -9,11 +9,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 
-from rotation_fitfunctions import rot_incl_iso, rot_incl_NFW, rot_incl_bur, vel_tot_bur, vel_tot_iso, vel_tot_NFW,bulge_vel, disk_vel, halo_vel_NFW, halo_vel_Bur, halo_vel_iso
+#from rotation_fitfunctions import rot_incl_iso, rot_incl_NFW, rot_incl_bur, vel_tot_bur, vel_tot_iso, vel_tot_NFW,bulge_vel, disk_vel, halo_vel_NFW, halo_vel_Bur, halo_vel_iso
 from astropy.io import fits
 
-
-
+import sys
+sys.path.insert(1,"main/")
+from galaxy_component_functions_cython import vel_tot_bur, vel_tot_iso, vel_tot_NFW,bulge_vel, disk_vel, halo_vel_NFW, halo_vel_bur, halo_vel_iso
+from Velocity_Map_Functions_cython import rot_incl_iso, rot_incl_bur, rot_incl_NFW
 
 
 def Plotting_Isothermal(ID, shape, scale, fit_solution, mask, ax=None):
