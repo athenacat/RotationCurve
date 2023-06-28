@@ -15,7 +15,69 @@ from typedefs cimport DTYPE_F64_t, DTYPE_INT64_t
 
 from galaxy_component_functions_cython cimport vel_tot_iso,\
                                                vel_tot_NFW,\
-                                               vel_tot_bur
+                                               vel_tot_bur, \
+                                               db_vel
+
+
+################################################################################
+# Rotation curve of the bulge and disk model
+#-------------------------------------------------------------------------------
+cpdef disk_bulge_vel(DTYPE_F64_t[:] r, 
+                     DTYPE_F64_t log_rhob0, 
+                     DTYPE_F64_t Rb,
+                     DTYPE_F64_t SigD, 
+                     DTYPE_F64_t Rd):
+    '''
+    Function to calculate the velocity due to a bulge and disk given a set of 
+    parameters.
+
+
+    PARAMETERS
+    ==========
+
+    r : array
+        Values of radius at which to calculate the velocity.  Units are kpc.
+
+    log_rhob0 : float
+        Base-10 logarithm of the central volume density of the bulge.  Units are 
+        log10(Msun/pc^3)
+
+    Rb : float
+        Scale radius of the bulge.  Units are kpc
+
+    SigD : float
+        Central surface mass density of the disk.  Units are Msun/pc^2
+
+    Rd : float
+        Scale radius of the disk.  Units are kpc
+
+
+    RETURNS
+    =======
+
+    v : array
+        Values of the velocity due to the bulge and disk components.  Units are 
+        km/s
+    '''
+
+    cdef DTYPE_INT64_t i
+    cdef DTYPE_F64_t v
+    cdef DTYPE_F64_t[:] vel_memview
+    cdef DTYPE_INT64_t N = len(r)
+
+    vel = np.zeros(N, dtype=np.float64)
+    vel_memview = vel
+
+    for i in range(N):
+
+        v = db_vel(r[i], log_rhob0, Rb, SigD, Rd)
+
+        vel_memview[i] = v
+
+    return vel
+################################################################################
+
+
 
 ################################################################################
 # Isothermal model with bulge

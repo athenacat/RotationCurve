@@ -451,11 +451,11 @@ cpdef DTYPE_F64_t halo_vel_bur(DTYPE_F64_t r,
 ################################################################################
 # total velocity for the bulge and disk components
 #-------------------------------------------------------------------------------
-cpdef DTYPE_F64_t disk_bulge_vel(DTYPE_F64_t r, 
-                                 DTYPE_F64_t log_rhob0, 
-                                 DTYPE_F64_t Rb,
-                                 DTYPE_F64_t SigD, 
-                                 DTYPE_F64_t Rd):
+cpdef DTYPE_F64_t db_vel(DTYPE_F64_t r, 
+                         DTYPE_F64_t log_rhob0, 
+                         DTYPE_F64_t Rb,
+                         DTYPE_F64_t SigD, 
+                         DTYPE_F64_t Rd):
     '''
     Function to calculate the total velocity due to a bulge and disk 
     component.
