@@ -6,8 +6,11 @@ from scipy.optimize import minimize
 
 #from RC_plotting_functions import plot_diagnostic_panel
 from disk_mass import calc_mass_curve, fit_mass_curve
-from rotation_curve_functions import bulge_vel, disk_vel, halo_vel_iso, halo_vel_NFW, halo_vel_Bur
+#from rotation_curve_functions import bulge_vel, disk_vel, halo_vel_iso, halo_vel_NFW, halo_vel_Bur
 
+import sys
+sys.path.insert(1,"/gpfs/fs1/home/lstroud3/Documents/RotationCurve/main/")
+from Velocity_Map_Functions_cython import rot_incl_iso, rot_incl_bur, rot_incl_NFW
 
 H_0 = 100  # Hubble's Constant in units of h km/s/Mpc
 c = 299792.458  # Speed of light in units of km/s
@@ -101,7 +104,7 @@ def find_axis_ratio(incli):
     return axis_ratio
     
 
-
+"""
 
 def vel_tot_iso(r, params):
     rhob0, Rb, SigD, Rd, rho0_h, Rh = params
@@ -152,11 +155,11 @@ def vel_tot_bur(r, params):
 
     return np.sqrt(v2)
 
-
+"""
 
 def loglikelihood_iso_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat, ivar_flat, mask):
     rho0_h, Rh, incl, phi, x_center, y_center, vsys = params
-    total_param = [rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
+    total_param = [np.log10(rhob), Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
     ############################################################################
     # Construct the model
     # ---------------------------------------------------------------------------
@@ -177,7 +180,7 @@ def nloglikelihood_iso_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat
 
 def loglikelihood_NFW_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat, ivar_flat, mask):
     rho0_h, Rh, incl, phi, x_center, y_center, vsys = params
-    total_param = [rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
+    total_param = [np.log10(rhob), Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
     ############################################################################
     # Construct the model
     # ---------------------------------------------------------------------------
@@ -197,7 +200,7 @@ def nloglikelihood_NFW_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat
 
 def loglikelihood_bur_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat, ivar_flat, mask):
     rho0_h, Rh, incl, phi, x_center, y_center, vsys = params
-    total_param = [rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
+    total_param = [np.log10(rhob), Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
     # log_rhob0, Rb, SigD, Rd, rho0_h, Rh, inclination, phi, center_x, center_y, vsys
     ############################################################################
     # Construct the model
@@ -216,7 +219,7 @@ def loglikelihood_bur_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat,
 def nloglikelihood_bur_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat, ivar_flat, mask):
     return -loglikelihood_bur_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat, ivar_flat, mask)
 
-
+"""
 def rot_incl_iso(shape, scale, params):
     rhob0, Rb, SigD, Rd, logrho0_h, Rh, inclination, phi, center_x, center_y, vsys = params
     rho0_h = np.power(10 ,logrho0_h)
@@ -276,12 +279,11 @@ def rot_incl_bur(shape, scale, params):
             rotated_inclined_map[i, j] = v + vsys
     
     return rotated_inclined_map
-
+"""
 
 def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
     
     rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
-    print(incl)
     # Isothermal Fitting
     bounds_iso = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [1, 1000],  # Halo radius [kpc]
@@ -292,7 +294,6 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                   [-100, 100]]  # systemic velocity
 
     vsys = 0
-    print(bounds_iso)
     ig_iso = [rho_h, Rh, incl, ph, x_guess, y_guess, vsys]
     bestfit_iso = minimize(nloglikelihood_iso_flat,
                            ig_iso,
@@ -302,7 +303,7 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                            method='Powell',
                            bounds=bounds_iso)
     print('---------------------------------------------------')
-    print(bestfit_iso.status,bestfit_iso.x)
+    print("Status:",bestfit_iso.status,"Values:",bestfit_iso.x)
 
     return bestfit_iso.x
 
@@ -333,7 +334,7 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                            method='Powell',
                            bounds=bounds_nfw)
     print('---------------------------------------------------')
-    print(bestfit_NFW.status,bestfit_NFW.x)
+    print("Status:",bestfit_NFW.status,"Values",bestfit_NFW.x)
 
     return bestfit_NFW.x
 

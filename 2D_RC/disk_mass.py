@@ -15,9 +15,11 @@ from Pipe3D_rotation_curve_plottingFunctions import plot_sMass_image
 
 from disk_mass_plotting_functions import plot_fitted_disk_rot_curve
 
-from rotation_curve_functions import disk_vel, disk_bulge_vel
+#from rotation_curve_functions import disk_vel, disk_bulge_vel
+import sys
+sys.path.insert(1,"/gpfs/fs1/home/lstroud3/Documents/RotationCurve/main/")
 
-
+from galaxy_component_functions_cython import disk_vel, disk_bulge_vel
 
 
 ################################################################################
@@ -295,7 +297,7 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
     try:
 
         if fit_function=='bulge':
-            popt, pconv = curve_fit(disk_bulge_vel, data_table['radius'],data_table['star_vel'],
+            popt, pconv = curve_fit(disk_bulge_vel, data_table['radius']*1000,data_table['star_vel'],
                                     p0=param_guesses,
                                     bounds=param_bounds,
                                     sigma=data_table['star_vel_err']
@@ -306,7 +308,7 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
 
         else:
             popt, pconv = curve_fit(disk_vel, 
-                                    data_table['radius'], 
+                                    data_table['radius']*1000, 
                                     data_table['star_vel'], 
                                     p0=param_guesses,
                                     sigma=data_table['star_vel_err'])
@@ -337,8 +339,8 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
                                 'Sigma_disk_err': perr[0], 
                                 'R_disk': popt[1], 
                                 'R_disk_err': perr[1],
-                                'rho_bulge' : popt[2],
-                                'rho_bulge_err' : perr[2],
+                                'rho_bulge' : 10**popt[2],
+                                'rho_bulge_err' : 10**perr[2],
                                 'R_bulge' : popt[3],
                                 'R_bulge_err' : perr[3], 
                                 'chi2_disk': chi2}
@@ -362,10 +364,10 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
                                    fit_function, 
                                    IMAGE_DIR=IMAGE_DIR, 
                                    IMAGE_FORMAT=IMAGE_FORMAT)
-        """
+        
         if IMAGE_DIR is None:
             plt.show()
-            """
+            
         #-----------------------------------------------------------------------
         
     except RuntimeError:
