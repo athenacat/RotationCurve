@@ -351,7 +351,7 @@ def disk_vel(r, SigD, Rd):
     return np.sqrt(vel2) / 1000
 ################################################################################
 
-def disk_bulge_vel(r, SigD, Rd, rho_bulge, R_bulge):
+def disk_bulge_vel(r, rho_bulge, R_bulge, SigD, Rd):
     '''
     Calculate the total mass within some radius r from the disk mass function.
 
@@ -359,14 +359,14 @@ def disk_bulge_vel(r, SigD, Rd, rho_bulge, R_bulge):
     PARAMETERS
     ==========
 
-    rho_bulge : float
-        bulge central mass density [M_sol/kpc^3]
+    logrho_bulge : float
+        bulge central mass density [log(M_sol/pc^3)]
 
     R_bulge : float
         bulge scale radius [kpc]
 
-    r
-        [kpc]
+    r: float or ndarray of shape (n,)
+        radius from center [kpc]
     
     SigD : float
         central surface density for the disk [M_sol/pc^2]
@@ -377,26 +377,33 @@ def disk_bulge_vel(r, SigD, Rd, rho_bulge, R_bulge):
     RETURNS
     =======
 
-    v_disk : velocity of disk and bulge component [km/s]
+    v_disk : float or ndarray of shape (n,)
+        velocity of disk and bulge component [km/s]
     '''
-
+    #print("------------------------------")
+    #print("rho_bulge:",rho_bulge)
+    #print("Rb:",R_bulge)
+    #print("SigD:",SigD)
+    #print("Rd:",Rd)
     #v_d = disk_vel(r=r, SigD=SigD, Rd=Rd) #km/s
-
-    coeff = 4 * np.pi * G *SigD *  ((Rd*1000)/3.086E16)*Msun
+    #print(rho_bulge)
+    #rho_bulge = 10 ** logrho_bulge
+    coeff = 4 * np.pi * G *SigD *  (Rd*1000)*3.086E16*Msun
     y = r / (2*Rd)
     bessel_component = (iv(0, y) * kn(0, y) - iv(1, y) * kn(1, y))
-    vd_2 = coeff * y**2 * bessel_component / 10**6
+    vd_2 = coeff * y**2 * bessel_component / 1e6
 
     # bulge component
     x = r / R_bulge # unitless
     F = 1 - np.exp(-x) * (1 + x + x**2 / 2) # unitless
-    M0 = 8 * np.pi * R_bulge**3 * rho_bulge # sol mass
-    coeff_2 = G * M0 * Msun * 1/(1000**3 * 3.086E16)
+    M0 = 8 * np.pi * (R_bulge*1000)**3 * rho_bulge # sol mass
+    coeff_2 = G * M0 * Msun # m^3 / s^2
     #vb_2 = G * M0 * Msun / r * F * 1/(1000**3 * 3.086E16)
-    vb_2 = coeff_2 * F / r
+    vb_2 = coeff_2 * F / (r * 3.086e19) # (m/s)^2
+    vb_2 /= 1e6 # (km/s)^2
 
 
-    v_disk = np.sqrt(vd_2 + vb_2) #km/s
+    v_disk = np.sqrt(vd_2 + vb_2) # km/s
     return v_disk
 
 

@@ -65,10 +65,10 @@ def plot_fitted_disk_rot_curve(gal_ID,
 
     if fit_function == 'bulge':
         v = disk_bulge_vel(r_depro,
-                            fit_parameters['Sigma_disk'],
-                            fit_parameters['R_disk'],
                             fit_parameters['rho_bulge'],
-                            fit_parameters['R_bulge'])
+                            fit_parameters['R_bulge'],
+                            fit_parameters['Sigma_disk'],
+                            fit_parameters['R_disk'])
 
     else:
         v = disk_vel(r_depro, 

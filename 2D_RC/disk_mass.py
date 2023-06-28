@@ -15,12 +15,13 @@ from Pipe3D_rotation_curve_plottingFunctions import plot_sMass_image
 
 from disk_mass_plotting_functions import plot_fitted_disk_rot_curve
 
-#from rotation_curve_functions import disk_vel, disk_bulge_vel
-import sys
-sys.path.insert(1,"main/")
+from rotation_curve_functions import disk_vel, disk_bulge_vel
 
-from galaxy_component_functions_cython import disk_vel, disk_bulge_vel
+#import sys
+#sys.path.insert(1,"main/")
 
+#from galaxy_component_functions_cython import disk_vel
+#from Velocity_Map_Functions_cython import disk_bulge_vel
 
 ################################################################################
 ################################################################################
@@ -232,7 +233,6 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
     # Set up initial guesses for the best-fit parameters
     #---------------------------------------------------------------------------
     
-    
     # Central disk mass density [M_sol/pc^2]
     Sigma_disk_guess = 1000.
 
@@ -241,17 +241,17 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
 
     if fit_function == 'bulge':
         # Bulge central density [log(M_sol/kpc^3]
-        rho_bulge_guess =  3.
+        rho_bulge_guess =  1000.
 
         # Bulge scale radius [kpc]
         R_bulge_guess = 1.
         
-        param_guesses = [Sigma_disk_guess, R_disk_guess, rho_bulge_guess, R_bulge_guess]
+        param_guesses = [rho_bulge_guess, R_bulge_guess,Sigma_disk_guess, R_disk_guess]
 
     else: 
         param_guesses = [Sigma_disk_guess, R_disk_guess]
     ############################################################################
-
+    #disk_bulge_vel(data_table['radius'], rho_bulge_guess, R_bulge_guess
 
     ############################################################################
     # Set up bounds for the best-fit parameters
@@ -270,7 +270,7 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
 
         # Bulge central density [log(M_sol/pc^3]
         rho_bulge_min = 0.
-        rho_bulge_max = 11
+        rho_bulge_max = 1e11
         rho_bulge_bounds  = (rho_bulge_min, rho_bulge_max)
 
         # Bulge scale radius [kpc]
@@ -283,8 +283,8 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
                         R_disk_bounds, 
                         rho_bulge_bounds, 
                         R_bulge_bounds]'''
-        param_bounds = ([Sigma_disk_min, R_disk_min, rho_bulge_min, R_bulge_min], 
-                        [Sigma_disk_max, R_disk_max, rho_bulge_max, R_bulge_max])
+        param_bounds = ([ rho_bulge_min, R_bulge_min,Sigma_disk_min, R_disk_min], 
+                        [ rho_bulge_max, R_bulge_max,Sigma_disk_max, R_disk_max])
 
     else:
         param_bounds = [Sigma_disk_bounds, R_disk_bounds]
@@ -300,7 +300,8 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
             popt, pconv = curve_fit(disk_bulge_vel, data_table['radius'],data_table['star_vel'],
                                     p0=param_guesses,
                                     bounds=param_bounds,
-                                    sigma=data_table['star_vel_err']
+                                    sigma=data_table['star_vel_err'],
+                                    method="trf", verbose = 2
                                     )
 
             
@@ -335,14 +336,14 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
 
 
         if fit_function == 'bulge' :
-            best_fit_values = {'Sigma_disk': popt[0], 
-                                'Sigma_disk_err': perr[0], 
-                                'R_disk': popt[1], 
-                                'R_disk_err': perr[1],
-                                'rho_bulge' : 10**popt[2],
-                                'rho_bulge_err' : 10**perr[2],
-                                'R_bulge' : popt[3],
-                                'R_bulge_err' : perr[3], 
+            best_fit_values = {'Sigma_disk': popt[2], 
+                                'Sigma_disk_err': perr[2], 
+                                'R_disk': popt[3], 
+                                'R_disk_err': perr[3],
+                                'rho_bulge' : popt[0],
+                                'rho_bulge_err' : perr[0],
+                                'R_bulge' : popt[0],
+                                'R_bulge_err' : perr[0], 
                                 'chi2_disk': chi2}
 
         else: 
