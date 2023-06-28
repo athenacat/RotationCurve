@@ -200,14 +200,15 @@ def mass_integrand(r,a,b):
 # getting a velocity
 #-------------------------------------------------------------------------------
 def bulge_vel(r,a,b):
-    """
+    '''
     parameters:
-    r (radius): The a distance from the centre (kpc)
+    r (radius): The a distance from the centre (pc)
     a (central density): The central density of the bulge (M/pc^2)
-    b (central radius): The central radius of the bulge (kpc)
+    b (central radius): The central radius of the bulge (pc)
 
     return: rotational velocity of the bulge (km/s)
-    
+    '''
+    """
     # integrating to get mass
     if isinstance(r, float):
         bulge_mass, m_err = inte.quad(mass_integrand, 0, r, args=(a, b))
@@ -222,11 +223,21 @@ def bulge_vel(r,a,b):
     vel = np.sqrt(G*(bulge_mass*1.988E30)/(r*3.08E16))
     vel /= 1000
     """
+    
     x = r / b # unitless
-    F = 1 - np.exp(-x) * (1 + x + x**2 / 2) # unitless
-    M0 = 8 * np.pi * b**3 * a # sol mass
-    coeff_2 = G * M0 * Msun * 1/(1000**3 * 3.086E16)
+    
+    F = 1. - np.exp(-x) * (1. + x + 0.5 * x**2) # unitless
+    
+    M0 = 8. * np.pi * b**3 * a # sol mass
+    
+    """
+    coeff_2 = G * (M0 * Msun) * 1/(1000**3 * 3.086E16)
+    
     vel = np.sqrt(coeff_2 * F / r)
+    """
+    vel2 = G * (M0 * Msun) * F / (r * 3.086e16) # (m/s)^2
+    
+    vel = 0.001 * np.sqrt(vel2) # km/s
     
     return vel
 
@@ -335,20 +346,23 @@ def v_d(r, Mdisk, Rd):
 def disk_vel(r, SigD, Rd):
     '''
     :param SigD: Central surface density for the disk [M_sol/pc^2]
-    :param Rd: The scale radius of the disk [kpc]
-    :r: The distance from the centre [kpc]
+    :param Rd: The scale radius of the disk [pc]
+    :r: The distance from the centre [pc]
     :return: The rotational velocity of the disk [km/s]
     '''
     #SigD, Rd = params
 
     
-    y = r / (2 * Rd)
+    y = 0.5 * r / Rd # unitless
 
-    bessel_component = (iv(0, y) * kn(0, y) - iv(1, y) * kn(1, y))
-    vel2 = (4 *np.pi * G * SigD * y ** 2 * ((Rd*1000)/3.086E16)*Msun) * bessel_component
+    bessel_component = iv(0, y) * kn(0, y) - iv(1, y) * kn(1, y) # unitless
+    
+    vel2 = 4 * np.pi * G * (SigD * Msun) * Rd * y**2 * bessel_component / 3.086e16 # (m/s)^2
+    
     #m^3 * kg^-1 * s^-2 * M_sol/pc^2 
     #3.086E16 = pc/m 
-    return np.sqrt(vel2) / 1000
+    
+    return 0.001 * np.sqrt(vel2)
 ################################################################################
 
 def disk_bulge_vel(r, rho_bulge, R_bulge, SigD, Rd):
@@ -377,9 +391,11 @@ def disk_bulge_vel(r, rho_bulge, R_bulge, SigD, Rd):
     RETURNS
     =======
 
-    v_disk : float or ndarray of shape (n,)
+    v : float or ndarray of shape (n,)
         velocity of disk and bulge component [km/s]
     '''
+    
+    """
     #print("------------------------------")
     #print("rho_bulge:",rho_bulge)
     #print("Rb:",R_bulge)
@@ -401,10 +417,17 @@ def disk_bulge_vel(r, rho_bulge, R_bulge, SigD, Rd):
     #vb_2 = G * M0 * Msun / r * F * 1/(1000**3 * 3.086E16)
     vb_2 = coeff_2 * F / (r * 3.086e19) # (m/s)^2
     vb_2 /= 1e6 # (km/s)^2
+    
+    v = np.sqrt(vd_2 + vb_2) # km/s
+    """
+    
+    vb = bulge_vel(r*1000, rho_bulge, R_bulge*1000)
+    
+    vd = disk_vel(r*1000, SigD, Rd*1000)
 
-
-    v_disk = np.sqrt(vd_2 + vb_2) # km/s
-    return v_disk
+    v = np.sqrt( vb**2 + vd**2 )
+    
+    return v
 
 
 

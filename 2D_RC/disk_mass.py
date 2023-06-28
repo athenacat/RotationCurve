@@ -92,28 +92,29 @@ def calc_mass_curve(sMass_density,
     ############################################################################
     # Mask the maps
     #---------------------------------------------------------------------------
-    sMass_mask = map_mask + np.isnan(sMass_density)
+    sMass_mask = map_mask + np.isnan(sMass_density) + np.isnan(sMass_density_err)
 
     msMass_density = ma.array(sMass_density.value, mask=sMass_mask)
-
-    sMass_err_mask = map_mask + np.isnan(sMass_density_err)
-    msMass_density_err = ma.array(sMass_density_err.value, mask=sMass_err_mask)
+    
+    msMass_density_err = ma.array(sMass_density_err.value, mask=sMass_mask)
 
     mr_band = ma.array(r_band, mask=sMass_mask)
     ############################################################################
 
 
+    '''
     ############################################################################
     # Plot the stellar mass density map
     #---------------------------------------------------------------------------
-    '''plot_sMass_image(msMass_density, 
+    plot_sMass_image(msMass_density, 
                      gal_ID, 
                      IMAGE_DIR=IMAGE_DIR, 
                      IMAGE_FORMAT=IMAGE_FORMAT)
 
     if IMAGE_DIR is None:
-        plt.show()'''
+        plt.show()
     ############################################################################
+    '''
 
     ############################################################################
     # If necessary, determine optical center via the max luminosity in the 
@@ -133,6 +134,7 @@ def calc_mass_curve(sMass_density,
         '''
     ############################################################################
 
+    
     ############################################################################
     # If all of the data is masked, return null values for everything
     #---------------------------------------------------------------------------
@@ -212,6 +214,11 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
 
     gal_ID : string
         [PLATE]-[IFU]
+        
+    fit_function : string
+        Identifies which function to fit.
+          - "bulge" - fits the data to a model of the bulge + disk
+          - None (default) - fits the data to a model of the disk
 
     IMAGE_DIR : string
         File path to which various produced images are saved.  
@@ -232,7 +239,6 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
     ############################################################################
     # Set up initial guesses for the best-fit parameters
     #---------------------------------------------------------------------------
-    
     # Central disk mass density [M_sol/pc^2]
     Sigma_disk_guess = 1000.
 
@@ -240,18 +246,19 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
     R_disk_guess = 1.
 
     if fit_function == 'bulge':
-        # Bulge central density [log(M_sol/kpc^3]
+        # Bulge central density [M_sol/pc^3]
         rho_bulge_guess =  1000.
 
         # Bulge scale radius [kpc]
         R_bulge_guess = 1.
         
-        param_guesses = [rho_bulge_guess, R_bulge_guess,Sigma_disk_guess, R_disk_guess]
+        param_guesses = [rho_bulge_guess, R_bulge_guess, Sigma_disk_guess, R_disk_guess]
 
     else: 
         param_guesses = [Sigma_disk_guess, R_disk_guess]
     ############################################################################
-    #disk_bulge_vel(data_table['radius'], rho_bulge_guess, R_bulge_guess
+    #v_initial = disk_bulge_vel(data_table['radius'], *param_guesses)
+    #return v_initial
 
     ############################################################################
     # Set up bounds for the best-fit parameters
