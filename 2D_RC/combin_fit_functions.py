@@ -17,11 +17,13 @@ def combination_fit(sMass_density, sMass_density_err, r_band, vmap, ivar, vmap_m
     param = rho_h0, Rh_0, incl, phi, x0, y0, vsys_0
     shape = vmap.shape
 ##disk fit
+    print("Fitting disk")
     mass_data_table = calc_mass_curve(sMass_density, sMass_density_err, r_band, \
                                           sM_mask, x0, y0, axis_ratio, phi, z, gal_ID)
     param_outputs = fit_mass_curve(mass_data_table, gal_ID, 'bulge')
     
 #total fit
+    print("Fitting velocity map")
     if fit_function == 'Isothermal':
         best_fit = parameterfit_iso(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                        param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
