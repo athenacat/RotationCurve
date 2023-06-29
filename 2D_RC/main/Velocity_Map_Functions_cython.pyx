@@ -23,7 +23,7 @@ from galaxy_component_functions_cython cimport vel_tot_iso,\
 # Rotation curve of the bulge and disk model
 #-------------------------------------------------------------------------------
 cpdef disk_bulge_vel(DTYPE_F64_t[:] r, 
-                     DTYPE_F64_t log_rhob0, 
+                     DTYPE_F64_t rho_0, 
                      DTYPE_F64_t Rb,
                      DTYPE_F64_t SigD, 
                      DTYPE_F64_t Rd):
@@ -38,9 +38,8 @@ cpdef disk_bulge_vel(DTYPE_F64_t[:] r,
     r : array
         Values of radius at which to calculate the velocity.  Units are kpc.
 
-    log_rhob0 : float
-        Base-10 logarithm of the central volume density of the bulge.  Units are 
-        log10(Msun/pc^3)
+    rho_0 : float
+        Central volume density of the bulge.  Units are Msun/pc^3
 
     Rb : float
         Scale radius of the bulge.  Units are kpc
@@ -63,14 +62,14 @@ cpdef disk_bulge_vel(DTYPE_F64_t[:] r,
     cdef DTYPE_INT64_t i
     cdef DTYPE_F64_t v
     cdef DTYPE_F64_t[:] vel_memview
-    cdef DTYPE_INT64_t N = len(r)
+    cdef DTYPE_INT64_t N = r.shape[0]
 
     vel = np.zeros(N, dtype=np.float64)
     vel_memview = vel
 
     for i in range(N):
 
-        v = db_vel(r[i], log_rhob0, Rb, SigD, Rd)
+        v = db_vel(r[i], rho_0, Rb, SigD, Rd)
 
         vel_memview[i] = v
 

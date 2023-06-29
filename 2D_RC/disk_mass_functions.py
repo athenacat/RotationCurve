@@ -6,7 +6,11 @@ import astropy.units as u
 from DRP_rotation_curve_functions import calc_stellar_mass, calc_velocity
 import scipy.special
 
-from rotation_curve_functions import disk_vel, disk_bulge_vel
+from rotation_curve_functions import disk_vel #, disk_bulge_vel
+
+import sys
+sys.path.insert(1, '/main/')
+from Velocity_Map_Functions_cython import disk_bulge_vel
 
 ################################################################################
 # Constants

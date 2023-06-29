@@ -191,8 +191,8 @@ cpdef DTYPE_F64_t bulge_vel_feng_2014(DTYPE_F64_t r,
 # Exponential bulge model (Sofue 2017)
 #-------------------------------------------------------------------------------
 cpdef DTYPE_F64_t bulge_vel(DTYPE_F64_t r,
-                            DTYPE_F64_t log_rhob0, 
-                            #DTYPE_F64_t rho_0, 
+                            #DTYPE_F64_t log_rhob0, 
+                            DTYPE_F64_t rho_0, 
                             DTYPE_F64_t Rb):
     '''
     Function to calculate the bulge velocity at a given galactocentric radius.
@@ -203,7 +203,7 @@ cpdef DTYPE_F64_t bulge_vel(DTYPE_F64_t r,
 
     r : The distance from the center [pc]
 
-    log_rhob0 : log(central bulge density) [log(M_sol/pc^3)]
+    rho_0 : The central bulge density [M_sol/pc^3]
 
     Rb : The scale radius of the bulge [pc]
 
@@ -213,7 +213,7 @@ cpdef DTYPE_F64_t bulge_vel(DTYPE_F64_t r,
 
     Vb : The rotational velocity of the bulge [km/s]
     '''
-    cdef DTYPE_F64_t rho_0
+    #cdef DTYPE_F64_t rho_0
     cdef DTYPE_F64_t mass_0
     cdef DTYPE_F64_t x
     cdef DTYPE_F64_t F
@@ -222,7 +222,7 @@ cpdef DTYPE_F64_t bulge_vel(DTYPE_F64_t r,
 
     if r != 0.0:
 
-        rho_0 = 10.0**log_rhob0
+        #rho_0 = 10.0**log_rhob0
 
         x = r/Rb
 
@@ -232,7 +232,7 @@ cpdef DTYPE_F64_t bulge_vel(DTYPE_F64_t r,
             
         vel = sqrt((G * mass_0 * Msun * F) / (r * 3.086e16))
 
-    Vb = vel / 1000.0
+    Vb = 0.001 * vel
 
     return Vb
 ################################################################################
@@ -242,8 +242,6 @@ cpdef DTYPE_F64_t bulge_vel(DTYPE_F64_t r,
 
 ################################################################################
 # Disk velocity from Sofue (2013)
-#
-# Fitting for central surface density
 #-------------------------------------------------------------------------------
 cpdef DTYPE_F64_t disk_vel(DTYPE_F64_t r, 
                            DTYPE_F64_t SigD, 
@@ -273,13 +271,13 @@ cpdef DTYPE_F64_t disk_vel(DTYPE_F64_t r,
     cdef DTYPE_F64_t vel2
     cdef DTYPE_F64_t Vd
 
-    y = r / (2.0 * Rd)
+    y = 0.5 * r / Rd
 
     bessel_component = i0(y) * k0(y) - i1(y) * k1(y)
 
     vel2 = (4.0 * pi * G * SigD * y**2 * (Rd / (3.086e16)) * Msun) * bessel_component
 
-    Vd = sqrt(vel2) / 1000.0
+    Vd = 0.001 * sqrt(vel2)
 
     return Vd
 ################################################################################
@@ -452,7 +450,7 @@ cpdef DTYPE_F64_t halo_vel_bur(DTYPE_F64_t r,
 # total velocity for the bulge and disk components
 #-------------------------------------------------------------------------------
 cpdef DTYPE_F64_t db_vel(DTYPE_F64_t r, 
-                         DTYPE_F64_t log_rhob0, 
+                         DTYPE_F64_t rho_0, 
                          DTYPE_F64_t Rb,
                          DTYPE_F64_t SigD, 
                          DTYPE_F64_t Rd):
@@ -470,8 +468,7 @@ cpdef DTYPE_F64_t db_vel(DTYPE_F64_t r,
 
     Rd : The scale radius of the disk [kpc]
 
-    log_rhob0 : The logarithm of the central surface mass density of the bulge
-        [log(M_sol/pc^3)]
+    rho_0 : The central surface mass density of the bulge [M_sol/pc^3]
 
     Rb : The scale radius of the bulge [kpc]
 
@@ -487,7 +484,7 @@ cpdef DTYPE_F64_t db_vel(DTYPE_F64_t r,
     cdef DTYPE_F64_t Vstar
     cdef DTYPE_F64_t v2
 
-    Vbulge = bulge_vel(r * 1000.0, log_rhob0, Rb * 1000.0)
+    Vbulge = bulge_vel(r * 1000.0, rho_0, Rb * 1000.0)
     Vdisk = disk_vel(r * 1000.0, SigD, Rd * 1000.0)
 
     v2 = Vbulge**2 + Vdisk**2
