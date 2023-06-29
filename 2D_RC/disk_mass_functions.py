@@ -6,7 +6,11 @@ import astropy.units as u
 from DRP_rotation_curve_functions import calc_stellar_mass, calc_velocity
 import scipy.special
 
-from rotation_curve_functions import disk_vel, disk_bulge_vel
+from rotation_curve_functions import disk_vel #, disk_bulge_vel
+
+import sys
+sys.path.insert(1, '/main/')
+from Velocity_Map_Functions_cython import disk_bulge_vel
 
 ################################################################################
 # Constants
@@ -62,7 +66,7 @@ def find_mass_curve(z,
     msMass_density : numpy array of shape (n,n)
         Masked stellar mass density map
 
-    optical_center : tuple of shape (2,1)
+    optical_center : length-2 tuple
         Array coordinates of the kinematic center of the galaxy
 
     phi : float
@@ -89,6 +93,7 @@ def find_mass_curve(z,
     pix_scale_factor = dist_to_galaxy_kpc * np.tan(MANGA_SPAXEL_SIZE)
     ############################################################################
 
+    
     ############################################################################
     # Create a meshgrid for all coordinate points based on the dimensions of
     # the stellar mass density numpy array.
@@ -101,19 +106,21 @@ def find_mass_curve(z,
     X_COORD, Y_COORD = np.meshgrid(X_RANGE, Y_RANGE)
     ############################################################################
 
+    
     ############################################################################
     # Initialization code to draw the elliptical annuli.
     # ---------------------------------------------------------------------------
-    phi_elip = np.pi / 2 - phi
+    phi_elip = 0.5*np.pi - phi
 
     x_diff = X_COORD - optical_center[1]
     y_diff = Y_COORD - optical_center[0]
 
-    ellipse = (x_diff * np.cos(phi_elip) - y_diff * np.sin(phi_elip)) ** 2 \
-              + (x_diff * np.sin(phi_elip) + y_diff * np.cos(phi_elip)) ** 2 \
-              / ba ** 2
+    ellipse = (x_diff * np.cos(phi_elip) - y_diff * np.sin(phi_elip))**2 \
+              + (x_diff * np.sin(phi_elip) + y_diff * np.cos(phi_elip))**2 \
+              / ba**2
     ############################################################################
 
+    
     ############################################################################
     # Initialize the lists for the columns of the output table
     # ---------------------------------------------------------------------------
@@ -125,6 +132,7 @@ def find_mass_curve(z,
     sVel_rot_curve_err = []
     ############################################################################
 
+    
     ############################################################################
     # Initialize the stellar mass surface density interior to an annulus to
     # be 0 solar masses.
@@ -134,8 +142,9 @@ def find_mass_curve(z,
     sMass_interior_err = 0.
     ############################################################################
 
+    
     ############################################################################
-    # ---------------------------------------------------------------------------
+    #---------------------------------------------------------------------------
     dR = 1
     R = 2
 
@@ -146,9 +155,9 @@ def find_mass_curve(z,
         ########################################################################
         # Define an eliptical annulus and check if there is at least one point 
         # within the mask.
-        # -----------------------------------------------------------------------
-        pix_between_annuli = np.logical_and((R - dR) ** 2 <= ellipse,
-                                            ellipse < R ** 2)
+        #-----------------------------------------------------------------------
+        pix_between_annuli = np.logical_and((R - dR)**2 <= ellipse,
+                                            ellipse < R**2)
 
         if not np.any(map_mask[pix_between_annuli] == 0):
             break
@@ -156,11 +165,11 @@ def find_mass_curve(z,
 
         ########################################################################
         # Extract the stellar mass interior to that annulus.
-        # -----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         sMass_interior, sMass_interior_err2 = calc_stellar_mass(sMass_interior,
                                                                 sMass_interior_err2,
-                                                                10 ** msMass_density,
-                                                                10 ** msMass_density_err,
+                                                                10**msMass_density,
+                                                                10**msMass_density_err,
                                                                 pix_between_annuli)
 
         sMass_interior_err = np.sqrt(sMass_interior_err2)
@@ -173,7 +182,7 @@ def find_mass_curve(z,
         ########################################################################
         # Append the corresponding values to their respective arrays to write to 
         # the output data file.
-        # -----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
 
         if np.isfinite(sMass_interior) and np.isfinite(sVel_rot):
             rot_curve_dist.append(deproj_dist_kpc)
@@ -187,12 +196,13 @@ def find_mass_curve(z,
 
         ########################################################################
         # Increment the radius of the annulus R by dR
-        # -----------------------------------------------------------------------
+        #-----------------------------------------------------------------------
         R += dR
 
         ########################################################################
     ############################################################################
 
+    
     ############################################################################
     # Build output data table
     # ---------------------------------------------------------------------------

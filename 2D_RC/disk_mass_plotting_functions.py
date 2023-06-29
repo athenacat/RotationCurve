@@ -7,7 +7,11 @@ import gc
 import matplotlib.pyplot as plt
 
 
-from rotation_curve_functions import disk_vel, disk_bulge_vel
+from rotation_curve_functions import disk_vel #, disk_bulge_vel
+
+import sys
+sys.path.insert(1, '/main/')
+from Velocity_Map_Functions_cython import disk_bulge_vel
 
 
 
@@ -65,15 +69,15 @@ def plot_fitted_disk_rot_curve(gal_ID,
 
     if fit_function == 'bulge':
         v = disk_bulge_vel(r_depro,
-                            fit_parameters['rho_bulge'],
-                            fit_parameters['R_bulge'],
-                            fit_parameters['Sigma_disk'],
-                            fit_parameters['R_disk'])
+                           fit_parameters['rho_bulge'],
+                           fit_parameters['R_bulge'],
+                           fit_parameters['Sigma_disk'],
+                           fit_parameters['R_disk'])
 
     else:
         v = disk_vel(r_depro, 
-                    fit_parameters['Sigma_disk'], 
-                    fit_parameters['R_disk'])
+                     fit_parameters['Sigma_disk'], 
+                     fit_parameters['R_disk'])
     ############################################################################
 
 
@@ -128,10 +132,10 @@ def plot_fitted_disk_rot_curve(gal_ID,
         for i in range(len(good_randoms[:,0])):
             # Calculate the values of the curve at this location
             y_sample[i] = disk_bulge_vel(r_depro, 
-                                good_randoms[:,0][i], 
-                                good_randoms[:,1][i], 
-                                good_randoms[:,2][i], 
-                                good_randoms[:,3][i])
+                                         good_randoms[:,0][i], 
+                                         good_randoms[:,1][i], 
+                                         good_randoms[:,2][i], 
+                                         good_randoms[:,3][i])
         
         
 
@@ -201,7 +205,7 @@ def plot_fitted_disk_rot_curve(gal_ID,
                             r'$\chi^{2}_{\nu}$: $%.3E$' % (chi2, ), 
                             r'$\Sigma_{d}$: $%.3E$ $M_{\odot}$/pc$^2$' % (fit_parameters['Sigma_disk'], ), 
                             r'$R_{d}$: $%.3f$ kpc' % (fit_parameters['R_disk'], ),
-                            r'$\rho_{b}$: $%.3E$ $M_{\odot}$/kpc$^3$' % (fit_parameters['rho_bulge'], ),
+                            r'$\rho_{b}$: $%.3E$ $M_{\odot}$/pc$^3$' % (fit_parameters['rho_bulge'], ),
                             r'$R_{b}$: $%.3f$ kpc' % (fit_parameters['R_bulge'], )
                             ))
 
