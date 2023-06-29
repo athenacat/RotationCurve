@@ -212,7 +212,6 @@ cpdef np.ndarray rot_incl_NFW(shape,
     cdef DTYPE_INT64_t num_cols = shape[1]
 
     log_rhob0, Rb, SigD, Rd, rho0_h, Rh, inclination, phi, center_x, center_y, vsys = params
-
     rotated_inclined_map = np.zeros(shape, dtype=np.float64)
     rotated_inclined_map_memview = rotated_inclined_map
     
@@ -227,7 +226,6 @@ cpdef np.ndarray rot_incl_NFW(shape,
             theta = atan2(-x, y)
 
             vTot = vel_tot_NFW(r, log_rhob0, Rb, SigD, Rd, rho0_h, Rh)
-            
             v = vTot*sin(inclination)*cos(theta)
 
             rotated_inclined_map_memview[i,j] = v + vsys

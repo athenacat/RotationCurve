@@ -14,7 +14,7 @@ from astropy.io import fits
 
 import sys
 sys.path.insert(1,"main/")
-from galaxy_component_functions_cython import vel_tot_bur, vel_tot_iso, vel_tot_NFW,bulge_vel, disk_vel, halo_vel_NFW, halo_vel_bur, halo_vel_iso
+from galaxy_component_functions_cython import vel_tot_bur, vel_tot_iso, vel_tot_NFW, disk_vel, bulge_vel, halo_vel_NFW, halo_vel_bur, halo_vel_iso
 from Velocity_Map_Functions_cython import rot_incl_iso, rot_incl_bur, rot_incl_NFW
 
 
@@ -207,7 +207,7 @@ def plot_rot_curve(mHa_vel,
     ax : matplotlib.pyplot figure axis object
         Axis handle on which to create plot
     '''
-
+    print(best_fit_values)
     if ax is None:
         fig, ax = plt.subplots(figsize=(3, 3))
 
@@ -267,22 +267,32 @@ def plot_rot_curve(mHa_vel,
     #r = np.linspace(ma.min(rm_deproj), ma.max(rm_deproj), 100)
     r = np.linspace(0, ma.max(rm_deproj), 100)
     
-    #v_b = np.zeros(len(r))
-    v_b = bulge_vel(r, best_fit_values[0], best_fit_values[1])
     
-    #v_d = np.zeros(len(r))
-    v_d = disk_vel(r, best_fit_values[2], best_fit_values[3])
     
-    if halo_model == 'Isothermal':
-        v_h = halo_vel_iso(r*1000,10**best_fit_values[4], best_fit_values[5] * 1000)
-    elif halo_model == 'NFW':
-        v_h = halo_vel_NFW(r*1000,10**best_fit_values[4], best_fit_values[5] * 1000)
-    elif halo_model == 'Burkert':
-        v_h = halo_vel_Bur(r*1000,10**best_fit_values[4], best_fit_values[5] * 1000)
-    else:
-        print('Fit function not known.  Please update plot_rot_curve function.')
+    v_b = np.zeros(len(r))
+    v_d = np.zeros(len(r))
+    v_h = np.zeros(len(r))
+    v = np.zeros(len(r))
+    
+    
+    for i in range(len(r)):
+    
+        #v_b = np.zeros(len(r))
+        v_b[i] = bulge_vel(r[i]*1000, best_fit_values[0], best_fit_values[1]*1000)
         
-    v = np.sqrt(v_b**2 + v_d**2 + v_h**2)
+        #v_d = np.zeros(len(r))
+        v_d[i] = disk_vel(r[i]*1000, best_fit_values[2], best_fit_values[3]*1000)
+        
+        if halo_model == 'Isothermal':
+            v_h[i] = halo_vel_iso(r[i]*1000,best_fit_values[4], best_fit_values[5] * 1000)
+        elif halo_model == 'NFW':
+            v_h[i] = halo_vel_NFW(r[i]*1000,best_fit_values[4], best_fit_values[5] * 1000)
+        elif halo_model == 'Burkert':
+            v_h[i] = halo_vel_bur(r[i]*1000,best_fit_values[4], best_fit_values[5] * 1000)
+        else:
+            print('Fit function not known.  Please update plot_rot_curve function.')
+        
+        v[i] = np.sqrt(v_b[i]**2 + v_d[i]**2 + v_h[i]**2)
     #v_h = np.zeros(len(r))
     
     #v = np.zeros(len(r))
@@ -295,11 +305,11 @@ def plot_rot_curve(mHa_vel,
     ax.set_title(gal_ID + ' ' + halo_model)
 
     ax.plot(rm_deproj, vm_deproj, 'k.', markersize=1)
-    ax.plot(np.concatenate((-r, r)), np.concatenate((-v, v)), 'c', label='$v_{tot}$')
-    ax.plot(np.concatenate((-r, r)), np.concatenate((-v_b, v_b)), '--', label='bulge')
+    ax.plot(np.concatenate((-np.flip(r), r)), np.concatenate((-np.flip(v), v)), 'c', label='$v_{tot}$')
+    ax.plot(np.concatenate((-np.flip(r), r)), np.concatenate((-np.flip(v_b), v_b)), '--', label='bulge')
     
-    ax.plot(np.concatenate((-r, r)), np.concatenate((-v_d, v_d)), '-.', label='disk')
-    ax.plot(np.concatenate((-r, r)), np.concatenate((-v_h, v_h)), ':', label='halo')
+    ax.plot(np.concatenate((-np.flip(r), r)), np.concatenate((-np.flip(v_d), v_d)), '-.', label='disk')
+    ax.plot(np.concatenate((-np.flip(r), r)), np.concatenate((-np.flip(v_h), v_h)), ':', label='halo')
     
     
     vmax = np.nanmax(v)

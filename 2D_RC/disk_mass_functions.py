@@ -9,7 +9,7 @@ import scipy.special
 from rotation_curve_functions import disk_vel #, disk_bulge_vel
 
 import sys
-sys.path.insert(1, '/main/')
+sys.path.insert(1, 'main/')
 from Velocity_Map_Functions_cython import disk_bulge_vel
 
 ################################################################################

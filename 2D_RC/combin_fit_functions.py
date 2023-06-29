@@ -21,6 +21,7 @@ def combination_fit(sMass_density, sMass_density_err, r_band, vmap, ivar, vmap_m
     mass_data_table = calc_mass_curve(sMass_density, sMass_density_err, r_band, \
                                           sM_mask, x0, y0, axis_ratio, phi, z, gal_ID)
     param_outputs = fit_mass_curve(mass_data_table, gal_ID, 'bulge')
+    print(param_outputs)
     
 #total fit
     print("Fitting velocity map")

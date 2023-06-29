@@ -160,9 +160,9 @@ def vel_tot_bur(r, params):
 
 """
 
-def loglikelihood_iso_flat(params, logrhob, Rb, SigD, Rd, scale, shape, vdata_flat, ivar_flat, mask):
+def loglikelihood_iso_flat(params, rhob, Rb, SigD, Rd, scale, shape, vdata_flat, ivar_flat, mask):
     rho0_h, Rh, incl, phi, x_center, y_center, vsys = params
-    total_param = [logrhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
+    total_param = [rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
     ############################################################################
     # Construct the model
     # ---------------------------------------------------------------------------
@@ -285,34 +285,33 @@ def rot_incl_bur(shape, scale, params):
 """
 
 def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
-    logrhob = np.log10(rhob)
+    
     rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
     # Isothermal Fitting
     bounds_iso = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [1, 1000],  # Halo radius [kpc]
                   [incl -(np.pi /6), 0.46 *np.pi],  # Inclination angle
                   [0, 2.2 * np.pi],  # Phase angle
-                  [x_guess - 5, x_guess + 5],  # center_x
-                  [y_guess - 5, y_guess + 5],  # center_y
+                  [x_guess - 2, x_guess + 2],  # center_x
+                  [y_guess - 2, y_guess + 2],  # center_y
                   [-100, 100]]  # systemic velocity
 
     vsys = 0
     ig_iso = [rho_h, Rh, incl, ph, x_guess, y_guess, vsys]
     bestfit_iso = minimize(nloglikelihood_iso_flat,
                            ig_iso,
-                           args=(logrhob, Rb, SigD, Rd, scale, shape,
+                           args=(rhob, Rb, SigD, Rd, scale, shape,
                                  vmap.compressed(),
                                  ivar.compressed(), mask),
                            method='Powell',
                            bounds=bounds_iso)
     print('---------------------------------------------------')
-    print("Status:",bestfit_iso.status,"Values:",bestfit_iso.x)
+    print("Status:",bestfit_iso.status,"Values",bestfit_iso.x)
 
     return bestfit_iso.x
 
 
 def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
-    logrhob = np.log10(rhob)
     rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
 
     bounds_nfw = [[-4, 2],  # Halo density [log(Msun/pc^3)]
@@ -332,7 +331,7 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
 
     bestfit_NFW = minimize(nloglikelihood_NFW_flat,
                            ig_NFW,
-                           args=(logrhob, Rb, SigD, Rd, scale, shape,
+                           args=(rhob, Rb, SigD, Rd, scale, shape,
                                  vmap.compressed(),
                                  ivar.compressed(), mask),
                            method='Powell',
@@ -344,7 +343,6 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
 
 
 def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
-    logrhob = np.log10(rhob)
     rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
 
     bounds_bur = [[-7, 2],  # Halo density [log(Msun/pc^3)]
@@ -359,7 +357,7 @@ def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
     ig_bur = [rho_h, Rh, incl, ph, x_guess, y_guess, vsys]
     bestfit_bur = minimize(nloglikelihood_bur_flat,
                            ig_bur,
-                           args=(logrhob, Rb, SigD, Rd, scale, shape,
+                           args=(rhob, Rb, SigD, Rd, scale, shape,
                                  vmap.compressed(),
                                  ivar.compressed(), mask),
                            method='Powell',
@@ -387,7 +385,7 @@ def chi2(vmap, ivar, vmask, shape, scale, best_fit, fit_function):
     
     best_fit: list of fitted parameters of velocity curve, 
         [rhob, Rb, SigD, Rd, rho0_h, Rh, incl, phi, x_center, y_center, vsys]
-            rhob: central density of the bulge (M_sun/kpc^3)
+            rhob: central density of the bulge (M_sun/pc^3)
             Rb: scale radius of the bulge (kpc)
             SigD: central density of the disk (M_sun/pc^2) 
             Rd:   scale radius of the disk (kpc)
@@ -423,7 +421,7 @@ def chi2(vmap, ivar, vmask, shape, scale, best_fit, fit_function):
     x = ma.array((vmap - v_tot_map ) ** 2 * ivar ** 2, mask = vmask)
     n = x.count()
     chi2 = ma.sum(x)
-    chi2r = chi2 / (n - 7)
+    chi2r = chi2 / (n - 11)
     
     return chi2, chi2r
 

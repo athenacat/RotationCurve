@@ -231,7 +231,7 @@ cpdef DTYPE_F64_t bulge_vel(DTYPE_F64_t r,
         mass_0 = 8.0 * pi * Rb**3 * rho_0
             
         vel = sqrt((G * mass_0 * Msun * F) / (r * 3.086e16))
-
+        
     Vb = 0.001 * vel
 
     return Vb
@@ -268,15 +268,14 @@ cpdef DTYPE_F64_t disk_vel(DTYPE_F64_t r,
 
     cdef DTYPE_F64_t y
     cdef DTYPE_F64_t bessel_component
-    cdef DTYPE_F64_t vel2
+    cdef DTYPE_F64_t vel2 = 0
     cdef DTYPE_F64_t Vd
+    if r!=0:
+        y = 0.5 * r / Rd
 
-    y = 0.5 * r / Rd
+        bessel_component = i0(y) * k0(y) - i1(y) * k1(y)
 
-    bessel_component = i0(y) * k0(y) - i1(y) * k1(y)
-
-    vel2 = (4.0 * pi * G * SigD * y**2 * (Rd / (3.086e16)) * Msun) * bessel_component
-
+        vel2 = (4.0 * pi * G * SigD * y**2 * (Rd / (3.086e16)) * Msun) * bessel_component
     Vd = 0.001 * sqrt(vel2)
 
     return Vd
@@ -377,12 +376,11 @@ cpdef DTYPE_F64_t halo_vel_NFW(DTYPE_F64_t r,
     rho0_h = 10**log_rhoh0
     
     halo_mass = 4.0 * pi * rho0_h * Rh**3 * ((Rh/(Rh + r)) + log(Rh + r) - 1.0 - log(Rh))
-
     if r != 0.0:
         vel2 = G * (halo_mass * Msun) / (r * 3.086e16)
 
     Vh = sqrt(vel2) / 1000.0
-
+    
     return Vh
 ################################################################################
 
@@ -549,7 +547,7 @@ cpdef DTYPE_F64_t vel_tot_iso(DTYPE_F64_t r,
     Vhalo = halo_vel_iso(r * 1000.0, log_rhoh0, Rh * 1000.0)
 
     v2 = Vbulge**2 + Vdisk**2 + Vhalo**2
-
+    
     Vtot = sqrt(v2)
 
     return Vtot

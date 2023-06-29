@@ -365,6 +365,7 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
         #-----------------------------------------------------------------------
         # Plot data and best-fit curve
         #-----------------------------------------------------------------------
+        """
         plot_fitted_disk_rot_curve(gal_ID,
                                    data_table, 
                                    best_fit_values, 
@@ -376,6 +377,7 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
         if IMAGE_DIR is None:
             plt.show()
             
+           """ 
         #-----------------------------------------------------------------------
         
     except RuntimeError:
