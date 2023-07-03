@@ -275,7 +275,7 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
 
         # Bulge central density [M_sol/pc^3]
         rho_bulge_min = 0.
-        rho_bulge_max = 100. # 1e11
+        rho_bulge_max = 1000. # 1e11
         #rho_bulge_bounds = (rho_bulge_min, rho_bulge_max)
 
         # Bulge scale radius [kpc]

@@ -318,7 +318,7 @@ def chi2_mass(params, r, v_data_mass, v_data_mass_err):
 
     # v_model= disk_vel(params, r)
     v_model = disk_bulge_vel(r, params[0], params[1], params[2], params[3])
-
+    
     chi2 = np.sum((v_data_mass - v_model) ** 2 / v_data_mass_err ** 2)
 
     n_chi2 = chi2 / (len(r) - len(params))

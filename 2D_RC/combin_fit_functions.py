@@ -46,7 +46,7 @@ def combination_fit(sMass_density, sMass_density_err, r_band, vmap, ivar, vmap_m
                            best_fit[4],best_fit[5],best_fit[6]]
 #Plot
     #RC.plot_rot_curve(vmap, ivar, best_fit_values, scale, gal_ID, fit_function)
-    return best_fit_values
+    return best_fit_values, mass_data_table, param_outputs
 
 
     

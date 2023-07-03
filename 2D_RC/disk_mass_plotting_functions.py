@@ -22,7 +22,7 @@ def plot_fitted_disk_rot_curve(gal_ID,
                                chi2,
                                fit_function=None,
                                IMAGE_DIR=None, 
-                               IMAGE_FORMAT='eps'):
+                               IMAGE_FORMAT='eps', ax =None):
     '''
     Plot the fitted rotation curve of disk component
 
@@ -55,10 +55,10 @@ def plot_fitted_disk_rot_curve(gal_ID,
     '''
 
 
-    #if ax is None:
-    fig = plt.figure(figsize=(8, 5))
-    ax = fig.add_axes([0.1, 0.1, 0.65, 0.8]) # [left, bottom, width, height]
-    legend_ax = fig.add_axes([0.8, 0.1, 0.2, 0.8])
+    if ax is None:
+        fig = plt.figure(figsize=(8, 5))
+        ax = fig.add_axes([0.1, 0.1, 0.65, 0.8]) # [left, bottom, width, height]
+        legend_ax = fig.add_axes([0.8, 0.1, 0.2, 0.8])
 
 
     ############################################################################

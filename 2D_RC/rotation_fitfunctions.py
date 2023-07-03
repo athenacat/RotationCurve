@@ -286,18 +286,20 @@ def rot_incl_bur(shape, scale, params):
 
 def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
     
-    rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
+    rho_h, Rh, incl, phi, x_guess, y_guess, vsys = params
     # Isothermal Fitting
     bounds_iso = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [1, 1000],  # Halo radius [kpc]
-                  [incl -(np.pi /6), 0.46 *np.pi],  # Inclination angle
-                  [0, 2.2 * np.pi],  # Phase angle
-                  [x_guess - 2, x_guess + 2],  # center_x
-                  [y_guess - 2, y_guess + 2],  # center_y
+                  [max(0,incl -(np.pi /6)), min(0.46 *np.pi,incl+(np.pi/6))],  # Inclination angle
+                  [max(0,phi-(np.pi /12)), min(2.2 * np.pi,phi+(np.pi/12))],  # Phase angle
+                  [x_guess - 5, x_guess + 5],  # center_x
+                  [y_guess - 5, y_guess + 5],  # center_y
                   [-100, 100]]  # systemic velocity
-
+    
     vsys = 0
-    ig_iso = [rho_h, Rh, incl, ph, x_guess, y_guess, vsys]
+    ig_iso = [rho_h, Rh, incl, phi, x_guess, y_guess, vsys]
+    print(bounds_iso)
+    print(ig_iso)
     bestfit_iso = minimize(nloglikelihood_iso_flat,
                            ig_iso,
                            args=(rhob, Rb, SigD, Rd, scale, shape,

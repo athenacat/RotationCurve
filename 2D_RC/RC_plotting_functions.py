@@ -9,8 +9,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 
-#from rotation_fitfunctions import rot_incl_iso, rot_incl_NFW, rot_incl_bur, vel_tot_bur, vel_tot_iso, vel_tot_NFW,bulge_vel, disk_vel, halo_vel_NFW, halo_vel_Bur, halo_vel_iso
+
 from astropy.io import fits
+from disk_mass_plotting_functions import plot_fitted_disk_rot_curve
+from disk_mass_functions import chi2_mass
 
 import sys
 sys.path.insert(1,"main/")
@@ -31,7 +33,7 @@ def Plotting_Isothermal(ID, shape, scale, fit_solution, mask, ax=None):
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 10))
-
+    print(fit_solution)
     iso_map = ax.imshow(ma.array(rot_incl_iso(shape, scale, fit_solution), mask=mask),
                         origin='lower',
                         cmap='RdBu_r')
@@ -397,3 +399,37 @@ def plot_diagnostic_panel(ID, shape, scale, Isothermal_Fit, NFW_Fit, Burket_Fit,
     panel_fig.tight_layout()
 
     plt.savefig(ID + '_Diagnostic_Panels_new')
+
+    
+def plot_totfit_panel (ID, shape, scale, vfit, fit_function, vmask, vmasked, ivar_masked, mass_data, mass_params):
+    #Set of four plots: actual velocity map, modeled 2D velocity map, disk mass fit, and decomposed v vs deprojected radius for a given halo model
+    
+    ###find chi2 of the disk mass fit
+    sM_chi2 = chi2_mass([mass_params['rho_bulge'], mass_params['R_bulge'], \
+                         mass_params['Sigma_disk'], mass_params['R_disk']], \
+                         mass_data['radius'], \
+                         mass_data['star_vel'], mass_data['star_vel_err'])
+    
+    
+    
+    panel_fig, ((vmap_panel,sMass_panel),(fit_panel, deproj_panel)) = plt.subplots(2,2)
+    panel_fig.set_figheight(10)
+    panel_fig.set_figwidth(15)
+    plt.suptitle(ID + " Diagnostic Panel", y=1.05, fontsize=16)
+    
+    #plt.imshow(vmasked, origin='lower', cmap='RdBu_r', ax=vmap_panel)
+    #plot_fitted_disk_rot_curve(ID, mass_data,mass_params,sM_chi2,ax=sMass_panel)
+    
+    if fit_function == "Isothermal":
+        Plotting_Isothermal(ID,shape,scale,vfit,vmask,ax = fit_panel)
+        plot_rot_curve(vmasked,ivar_masked,vfit,scale,ID,"Isothermal",ax=deproj_panel)
+    elif fit_function == "NFW":
+        Plotting_NFW(ID,shape,scale,vfit,vmask,ax = fit_panel)
+        plot_rot_curve(vmasked,ivar_masked,vfit,scale,ID,"NFW",ax=deproj_panel)
+    elif fit_function == "Burkert":
+        Plotting_Burkert(ID,shape,scale,vfit,vmask,ax = fit_panel)
+        plot_rot_curve(vmasked,ivar_masked,vfit,scale,ID,"Burkert",ax=deproj_panel)
+    else:
+        print("Fit function not recognized")
+    
+    panel_fig.tight_layout()
