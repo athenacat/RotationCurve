@@ -409,16 +409,20 @@ def plot_totfit_panel (ID, shape, scale, vfit, fit_function, vmask, vmasked, iva
                          mass_params['Sigma_disk'], mass_params['R_disk']], \
                          mass_data['radius'], \
                          mass_data['star_vel'], mass_data['star_vel_err'])
-    
-    
-    
+    print(sM_chi2)
     panel_fig, ((vmap_panel,sMass_panel),(fit_panel, deproj_panel)) = plt.subplots(2,2)
     panel_fig.set_figheight(10)
     panel_fig.set_figwidth(15)
     plt.suptitle(ID + " Diagnostic Panel", y=1.05, fontsize=16)
     
-    #plt.imshow(vmasked, origin='lower', cmap='RdBu_r', ax=vmap_panel)
-    #plot_fitted_disk_rot_curve(ID, mass_data,mass_params,sM_chi2,ax=sMass_panel)
+    vmap = vmap_panel.imshow(vmasked, origin='lower', cmap='RdBu_r')
+    vmap_panel.set_title(ID + ' Ha Map')
+    vmap_panel.set_xlabel('spaxel')
+    vmap_panel.set_ylabel('spaxel')
+    cbar = plt.colorbar(vmap, ax=vmap_panel)
+    cbar.set_label('km/s')
+    
+    plot_fitted_disk_rot_curve(ID, mass_data,mass_params,sM_chi2,'bulge',ax=sMass_panel)
     
     if fit_function == "Isothermal":
         Plotting_Isothermal(ID,shape,scale,vfit,vmask,ax = fit_panel)
@@ -433,3 +437,5 @@ def plot_totfit_panel (ID, shape, scale, vfit, fit_function, vmask, vmasked, iva
         print("Fit function not recognized")
     
     panel_fig.tight_layout()
+    
+    plt.savefig(ID + "_" + fit_function + "_diagonistic")
