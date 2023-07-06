@@ -108,34 +108,34 @@ for gal_ID in FILE_IDS:
         #total fit
         print("Fitting velocity map")
         if fit_function == 'Isothermal':
-            best_fit = parameterfit_iso(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+            best_fit,uncertainties = parameterfit_iso(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                            param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
                                            shape, maps['vmasked'], maps['ivarmasked'], vmap_mask)
         elif fit_function == 'NFW':
-            best_fit = parameterfit_NFW(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+            best_fit,uncertainties = parameterfit_NFW(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                            param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
                                            shape, maps['vmasked'], maps['ivarmasked'], vmap_mask)
        
         elif fit_function == 'Burkert':
-            best_fit = parameterfit_bur(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+            best_fit,uncertainties = parameterfit_bur(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                            param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
                                            shape, maps['vmasked'], maps['ivarmasked'], vmap_mask)
         else:
             print("Fit function not known")
         
         #check if fit is close enough to past iteration
-        if np.abs(best_fit[2]-param[2])<0.001 and np.abs(best_fit[4]-param[4])<1 and np.abs(best_fit[5]-param[5])<1:
+        if np.abs(best_fit[2]-param[2])<0.001 and np.abs(best_fit[4]-param[4])<1 and np.abs(best_fit[3]-param[3])<0.0017 \
+                and np.abs(best_fit[5]-param[5])<1:
             print("Iteration Converged")
             break
         
         param = best_fit
-        param[3]=phi
     
     if fit != None:
         fit = [param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                            param_outputs['Sigma_disk'], param_outputs['R_disk'], \
-                           best_fit[0], best_fit[1], best_fit[2], best_fit[3], \
-                           best_fit[4],best_fit[5],best_fit[6]]
+                           best_fit[0][0], best_fit[0][1], best_fit[0][2], best_fit[0][3], \
+                           best_fit[0][4],best_fit[0][5],best_fit[0][6]]
     
         sM_chi2 = chi2_mass(fit[0:4], mass_data_table['radius'], mass_data_table['star_vel'], mass_data_table['star_vel_err'])
         plot_fitted_disk_rot_curve(gal_ID, \

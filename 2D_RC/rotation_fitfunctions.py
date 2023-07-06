@@ -1,6 +1,7 @@
 
 import numpy as np
 import numpy.ma as ma
+import numdifftools as ndt
 
 from scipy.optimize import minimize
 
@@ -284,7 +285,7 @@ def rot_incl_bur(shape, scale, params):
     return rotated_inclined_map
 """
 
-def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
+def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID):
     
     rho_h, Rh, incl, phi, x_guess, y_guess, vsys = params
     # Isothermal Fitting
@@ -298,8 +299,6 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
     
     vsys = 0
     ig_iso = [rho_h, Rh, incl, phi, x_guess, y_guess, vsys]
-    print(bounds_iso)
-    print(ig_iso)
     bestfit_iso = minimize(nloglikelihood_iso_flat,
                            ig_iso,
                            args=(rhob, Rb, SigD, Rd, scale, shape,
@@ -307,13 +306,23 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                                  ivar.compressed(), mask),
                            method='Powell',
                            bounds=bounds_iso)
-    print('---------------------------------------------------')
-    print("Status:",bestfit_iso.status,"Values",bestfit_iso.x)
+    if bestfit_iso.success:
+        hessian = ndt.Hessian(nloglikelihood_iso_flat)
+        hess = hessian(bestfit_iso.x, rhob, Rb, SigD, Rd, scale, shape, vmap.compressed(), ivar.compressed(), mask)
+        
+        np.save('Hessians/' + gal_ID + '_iso_Hessian.npy',hess)
+        try:
+            hess_inv = 2*np.linalg.inv(hess)
+            fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
+        except np.linalg.LinAlgError:
+            fit_params_err = np.nan*np.ones(len(bestfit_iso.x))
+    
+        return bestfit_iso.x, fit_params_err
+    else:
+        print("Fit failed: ",bestfit_iso.message)
+        return np.nan*np.ones(len(bestfit_iso.x))
 
-    return bestfit_iso.x
-
-
-def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
+def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID):
     rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
 
     bounds_nfw = [[-4, 2],  # Halo density [log(Msun/pc^3)]
@@ -338,13 +347,25 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                                  ivar.compressed(), mask),
                            method='Powell',
                            bounds=bounds_nfw)
-    print('---------------------------------------------------')
-    print("Status:",bestfit_NFW.status,"Values",bestfit_NFW.x)
+    if bestfit_NFW.success:
+        hessian = ndt.Hessian(nloglikelihood_NFW_flat)
+        hess = hessian(bestfit_NFW.x, rhob, Rb, SigD, Rd, scale, shape, vmap.compressed(), ivar.compressed(), mask)
+        
+        np.save('Hessians/' + gal_ID + '_NFW_Hessian.npy',hess)
+        try:
+            hess_inv = 2*np.linalg.inv(hess)
+            fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
+        except np.linalg.LinAlgError:
+            fit_params_err = np.nan*np.ones(len(bestfit_NFW.x))
+    
+        return bestfit_NFW.x, fit_params_err
+    else:
+        print("Fit failed: ",bestfit_NFW.message)
+        return np.nan*np.ones(len(bestfit_NFW.x))
+    
 
-    return bestfit_NFW.x
 
-
-def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask):
+def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID):
     rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
 
     bounds_bur = [[-7, 2],  # Halo density [log(Msun/pc^3)]
@@ -364,11 +385,24 @@ def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask)
                                  ivar.compressed(), mask),
                            method='Powell',
                            bounds=bounds_bur  )  # ,options = opts)
-    #print('---------------------------------------------------')
-    print(bestfit_bur.status,bestfit_bur.x)
     
-    return bestfit_bur.x
-
+    if bestfit_bur.success:
+        hessian = ndt.Hessian(nloglikelihood_bur_flat)
+        hess = hessian(bestfit_bur.x, rhob, Rb, SigD, Rd, scale, shape, vmap.compressed(), ivar.compressed(), mask)
+        
+        np.save('Hessians/' + gal_ID + '_bur_Hessian.npy',hess)
+        try:
+            hess_inv = 2*np.linalg.inv(hess)
+            fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
+        except np.linalg.LinAlgError:
+            fit_params_err = np.nan*np.ones(len(bestfit_bur.x))
+    
+        return bestfit_bur.x, fit_params_err
+    else:
+        print("Fit failed: ",bestfit_bur.message)
+        return np.nan*np.ones(len(bestfit_bur.x))
+    
+    
 def chi2(vmap, ivar, vmask, shape, scale, best_fit, fit_function):
     """
     Calculates the chi2 and reduced chi2 values of the total velocity curve fit
@@ -423,7 +457,7 @@ def chi2(vmap, ivar, vmask, shape, scale, best_fit, fit_function):
     x = ma.array((vmap - v_tot_map ) ** 2 * ivar ** 2, mask = vmask)
     n = x.count()
     chi2 = ma.sum(x)
-    chi2r = chi2 / (n - 11)
+    chi2r = chi2 / (n - (len(best_fit) - 4)) #not including bulge/disk params
     
     return chi2, chi2r
 

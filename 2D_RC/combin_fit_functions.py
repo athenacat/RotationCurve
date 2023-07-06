@@ -28,25 +28,29 @@ def combination_fit(sMass_density, sMass_density_err, r_band, vmap, ivar, vmap_m
     if fit_function == 'Isothermal':
         best_fit = parameterfit_iso(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                        param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
-                                       shape, vmap, ivar, vmap_mask)
+                                       shape, vmap, ivar, vmap_mask, gal_ID)
     elif fit_function == 'NFW':
         best_fit = parameterfit_NFW(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                        param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
-                                       shape, vmap, ivar, vmap_mask)
+                                       shape, vmap, ivar, vmap_mask, gal_ID)
    
     elif fit_function == 'Burkert':
         best_fit = parameterfit_bur(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                        param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
-                                       shape, vmap, ivar, vmap_mask)
+                                       shape, vmap, ivar, vmap_mask, gal_ID)
     else:
         print("Fit function not known")
     best_fit_values = [param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                            param_outputs['Sigma_disk'], param_outputs['R_disk'], \
-                           best_fit[0], best_fit[1], best_fit[2], best_fit[3], \
-                           best_fit[4],best_fit[5],best_fit[6]]
-#Plot
-    #RC.plot_rot_curve(vmap, ivar, best_fit_values, scale, gal_ID, fit_function)
-    return best_fit_values, mass_data_table, param_outputs
+                           best_fit[0][0], best_fit[0][1], best_fit[0][2], best_fit[0][3], \
+                           best_fit[0][4],best_fit[0][5],best_fit[0][6]]
+    uncertainties= [param_outputs['rho_bulge_err'],param_outputs['R_bulge_err'],\
+                           param_outputs['Sigma_disk_err'], param_outputs['R_disk_err'],\
+                           best_fit[1][0], best_fit[1][1], best_fit[1][2], best_fit[1][3], \
+                           best_fit[1][4],best_fit[1][5],best_fit[1][6]]
+    
+    
+    return best_fit_values, mass_data_table, param_outputs, uncertainties
 
 
     
