@@ -391,7 +391,7 @@ def plot_diagnostic_panel(ID, shape, scale, Isothermal_Fit, NFW_Fit, Burket_Fit,
     Plotting_Burkert(ID, shape, scale, Burket_Fit, mask, ax=Burket_Plot_panel)
     print("Iso:",Isothermal_Fit)
     plot_rot_curve(vmasked, ivar_masked, Isothermal_Fit, scale, ID, 'Isothermal', ax=RC_Isothermal)
-    print("NFW",NFW_Fit)
+    print("NFW:",NFW_Fit)
     plot_rot_curve(vmasked, ivar_masked, NFW_Fit, scale, ID, 'NFW', ax=RC_NFW)
     print("Bur:",Burket_Fit)
     plot_rot_curve(vmasked, ivar_masked, Burket_Fit, scale, ID, 'Burkert', ax=RC_Burket)

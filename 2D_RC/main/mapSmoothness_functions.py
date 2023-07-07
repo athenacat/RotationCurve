@@ -1,6 +1,8 @@
 
 
 import numpy as np
+import sys
+sys.path.insert(1,'/home/lstroud3/Documents/RotationCurve/2D_RC/main/GradientSmoothness-1.0.0/')
 
 from GradientSmoothness import calculate_smoothness
 

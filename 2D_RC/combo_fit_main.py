@@ -41,7 +41,7 @@ MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr17/manga/spectro/'
 MASS_MAP_FOLDER = MANGA_FOLDER + 'pipe3d/'
 VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v3_1_1/' + 'drpall-v3_1_1.fits'
-MORPH_FILE = '/home/lstroud3/Documents/RotationCurve/2D_RC/manga_visual_morpho-2.0.1.fits'
+MORPH_FILE = '/home/lstroud3/Documents/manga_visual_morpho-2.0.1.fits'
 ##############################################################
 #Read in the galaxy information
 
@@ -58,7 +58,7 @@ Morph_table = Table.read(MORPH_FILE, format='fits')
 Morph_index = {}
 
 for i in range(len(Morph_table)):
-    galaxy_ID = Morph_table['plateifu'][i]
+    galaxy_ID = Morph_table['plateifu'][i].strip()
     Morph_index[galaxy_ID] = i
 
 
@@ -86,12 +86,11 @@ else:
     
     
 for gal_ID in FILE_IDS:
+    i_DRP = DRP_index[gal_ID]
+    i_morph = Morph_index[gal_ID+" "]
     if (DRP_table['mngtarg1'][i_DRP] > 0) or (gal_ID in ['9037-9102']):
-        #read in data
         maps = extract_data(VEL_MAP_FOLDER,gal_ID,['Ha_vel', 'r_band', 'Ha_flux', 'Ha_sigma'])
         sMass_density, sMass_density_err = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
-        i_DRP = DRP_index[gal_ID]
-        i_morph = Morph_index[gal_ID]
         SN_map = maps['Ha_flux'] * np.sqrt(maps['Ha_flux_ivar'])
         vmap_mask = maps['Ha_vel_mask'] + (SN_map < 5)
         sM_mask = maps['Ha_vel_mask']
@@ -108,11 +107,11 @@ for gal_ID in FILE_IDS:
             print('Not smooth:'+gal_ID)
             num_not_smooth += 1
         
-        elif Mdata['TTYPE'][i_morph] <= 0:
+        elif Morph_table['TType'][i_morph] <= 0:
             can_fit = False
             num_wrong_ttype += 1
             print('Not ttype:'+gal_ID)
-        elif Mdata['TIDAL'][i_morph] != 0:
+        elif Morph_table['Tidal'][i_morph] != 0:
             can_fit = False
             print('tidal:'+gal_ID)
             num_tidal += 1
@@ -140,6 +139,7 @@ for gal_ID in FILE_IDS:
             param = [rhoh,Rh,axis_ratio,phi,x0,y0,vsys]
     
     ################################################
+            fit = []
             for i in range(50):
                 ##disk fit
                 print("Fitting disk")
@@ -155,16 +155,16 @@ for gal_ID in FILE_IDS:
                 if fit_function == 'Isothermal':
                     best_fit = parameterfit_iso(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                                    param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
-                                                   shape, maps['vmasked'], maps['ivarmasked'], vmap_mask)
+                                                   shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID)
                 elif fit_function == 'NFW':
                     best_fit = parameterfit_NFW(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                                    param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
-                                                   shape, maps['vmasked'], maps['ivarmasked'], vmap_mask)
+                                                   shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID)
                
                 elif fit_function == 'Burkert':
                     best_fit = parameterfit_bur(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                                    param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
-                                                   shape, maps['vmasked'], maps['ivarmasked'], vmap_mask)
+                                                   shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID)
                 else:
                     print("Fit function not known")
                 
@@ -180,7 +180,7 @@ for gal_ID in FILE_IDS:
                 
                 #calc_hessian(fit, rhob, Rb, SigD, Rd, fit_function, scale, shape, vmap, ivar, mask, gal_ID)
                 uncertainties = calc_hessian(best_fit, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
-                                                   param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
+                                                   param_outputs['Sigma_disk'], param_outputs['R_disk'], fit_function, scale,\
                                                    shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID)
                 fit = [param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                    param_outputs['Sigma_disk'], param_outputs['R_disk'], \

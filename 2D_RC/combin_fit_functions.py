@@ -2,7 +2,7 @@ import numpy as np
 import numpy.ma as ma
 import RC_plotting_functions as RC
 from disk_mass import calc_mass_curve, fit_mass_curve
-from rotation_fitfunctions import parameterfit_bur, parameterfit_iso, parameterfit_NFW
+from rotation_fitfunctions import parameterfit_bur, parameterfit_iso, parameterfit_NFW, calc_hessian
 
 H_0 = 100  # Hubble's Constant in units of h km/s/Mpc
 c = 299792.458  # Speed of light in units of km/s
@@ -40,17 +40,20 @@ def combination_fit(sMass_density, sMass_density_err, r_band, vmap, ivar, vmap_m
                                        shape, vmap, ivar, vmap_mask, gal_ID)
     else:
         print("Fit function not known")
+    
+    uncertainties = calc_hessian(best_fit, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+                 param_outputs['Sigma_disk'], param_outputs['R_disk'], fit_function,\
+                 scale, shape, vmap, ivar, vmap_mask, gal_ID)
+                     
+    
     best_fit_values = [param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                            param_outputs['Sigma_disk'], param_outputs['R_disk'], \
-                           best_fit[0][0], best_fit[0][1], best_fit[0][2], best_fit[0][3], \
-                           best_fit[0][4],best_fit[0][5],best_fit[0][6]]
-    uncertainties= [param_outputs['rho_bulge_err'],param_outputs['R_bulge_err'],\
-                           param_outputs['Sigma_disk_err'], param_outputs['R_disk_err'],\
-                           best_fit[1][0], best_fit[1][1], best_fit[1][2], best_fit[1][3], \
-                           best_fit[1][4],best_fit[1][5],best_fit[1][6]]
+                           best_fit[0], best_fit[1], best_fit[2], best_fit[3], \
+                           best_fit[4],best_fit[5],best_fit[6]]
     
     
-    return best_fit_values, mass_data_table, param_outputs, uncertainties
+    
+    return best_fit_values, uncertainties, mass_data_table, param_outputs
 
 
     
