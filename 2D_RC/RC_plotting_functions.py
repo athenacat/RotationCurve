@@ -14,6 +14,8 @@ from astropy.io import fits
 from disk_mass_plotting_functions import plot_fitted_disk_rot_curve
 from disk_mass_functions import chi2_mass
 
+from rotation_fitfunctions import find_incl
+
 import sys
 sys.path.insert(1,"main/")
 from galaxy_component_functions_cython import vel_tot_bur, vel_tot_iso, vel_tot_NFW, disk_vel, bulge_vel, halo_vel_NFW, halo_vel_bur, halo_vel_iso
@@ -209,14 +211,14 @@ def plot_rot_curve(mHa_vel,
     ax : matplotlib.pyplot figure axis object
         Axis handle on which to create plot
     '''
-    print(best_fit_values)
+    #print(best_fit_values)
     if ax is None:
         fig, ax = plt.subplots(figsize=(3, 3))
 
     ############################################################################
     # Extract inclination angle (in radians)
     # ---------------------------------------------------------------------------
-    i_angle = best_fit_values[6]  # np.arccos(best_fit_values['ba'])
+    i_angle = best_fit_values[6] #find_incl(best_fit_values[6])  
     ############################################################################
 
     ############################################################################
@@ -315,7 +317,6 @@ def plot_rot_curve(mHa_vel,
     
     
     vmax = np.nanmax(v)
-    print(vmax)
     if np.isfinite(vmax):
         ax.set_ylim([-1.25 * vmax, 1.25 * vmax])
         ax.tick_params(axis='both', direction='in')
@@ -333,7 +334,8 @@ def plot_rot_curve(mHa_vel,
         ax.set_xlabel('Deprojected radius [kpc/h]')
         ax.set_ylabel('Rotational velocity [km/s]')
         plt.legend()
-    # plt.savefig(gal_ID + ' rotation curve ' + halo_model + '.png',format='png')
+    if IMAGE_DIR != None:
+        plt.savefig(IMAGE_DIR + gal_ID + ' rotation curve ' + halo_model,format=IMAGE_FORMAT)
     ############################################################################
 
 
@@ -401,7 +403,7 @@ def plot_diagnostic_panel(ID, shape, scale, Isothermal_Fit, NFW_Fit, Burket_Fit,
     plt.savefig(ID + '_Diagnostic_Panels_new')
 
     
-def plot_totfit_panel (ID, shape, scale, vfit, fit_function, vmask, vmasked, ivar_masked, mass_data, mass_params):
+def plot_totfit_panel (ID, shape, scale, vfit, fit_function, vmask, vmasked, ivar_masked, mass_data, mass_params, IMAGE_DIR=None):
     #Set of four plots: actual velocity map, modeled 2D velocity map, disk mass fit, and decomposed v vs deprojected radius for a given halo model
     
     ###find chi2 of the disk mass fit
@@ -437,5 +439,5 @@ def plot_totfit_panel (ID, shape, scale, vfit, fit_function, vmask, vmasked, iva
         print("Fit function not recognized")
     
     panel_fig.tight_layout()
-    
-    plt.savefig(ID + "_" + fit_function + "_diagonistic")
+    if IMAGE_DIR != None:
+        plt.savefig(IMAGE_DIR+ID + "_" + fit_function + "_diagonistic")

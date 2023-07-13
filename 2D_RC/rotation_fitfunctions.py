@@ -103,10 +103,13 @@ def find_phi(center_coords, phi_angle, vel_map):
 
 
 
-def find_axis_ratio(incli):
-    axis_ratio = np.sqrt((np.power(np.cos(incli),2) * (1-0.2**2)) + 0.2**2)
+def find_axis_ratio(incl):
+    axis_ratio = np.sqrt((np.power(np.cos(incl),2) * (1-0.2**2)) + 0.2**2)
     return axis_ratio
-    
+
+def find_incl(axis_ratio):
+    incl = np.arccos(np.sqrt((axis_ratio**2 - 0.2**2)/(1-0.2**2)))
+    return incl
 
 """
 
@@ -288,6 +291,8 @@ def rot_incl_bur(shape, scale, params):
 def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID):
     
     rho_h, Rh, incl, phi, x_guess, y_guess, vsys = params
+    
+    print('incl:',incl)
     # Isothermal Fitting
     bounds_iso = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [1, 1000],  # Halo radius [kpc]
@@ -296,7 +301,7 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask,
                   [x_guess - 5, x_guess + 5],  # center_x
                   [y_guess - 5, y_guess + 5],  # center_y
                   [-100, 100]]  # systemic velocity
-    
+    #print(bounds_iso)
     vsys = 0
     ig_iso = [rho_h, Rh, incl, phi, x_guess, y_guess, vsys]
     bestfit_iso = minimize(nloglikelihood_iso_flat,
@@ -324,19 +329,17 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask,
         return np.nan*np.ones(len(bestfit_iso.x))
 
 def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID):
-    rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
-
-    bounds_nfw = [[-4, 2],  # Halo density [log(Msun/pc^3)]
-                  [0.1, 1000],  # Halo radius [kpc]
-                  [0.1, 0.436 * np.pi],  # Inclination angle
-                  [0, 2.2 * np.pi],  # Phase angle
-                  [x_guess - 10, x_guess + 10],  # center_x
-                  [y_guess - 10, y_guess + 10],  # center_y
+    rho_h, Rh, incl, phi, x_guess, y_guess, vsys = params
+    
+    bounds_nfw = [[-7, 2],  # Halo density [log(Msun/pc^3)]
+                  [1, 1000],  # Halo radius [kpc]
+                  [max(0,incl -(np.pi /6)), min(0.46 *np.pi,incl+(np.pi/6))],  # Inclination angle
+                  [max(0,phi-(np.pi /12)), min(2.2 * np.pi,phi+(np.pi/12))],  # Phase angle
+                  [x_guess - 5, x_guess + 5],  # center_x
+                  [y_guess - 5, y_guess + 5],  # center_y
                   [-100, 100]]  # systemic velocity
 
-    vsys = 20
-
-    ig_NFW = [rho_h, Rh, incl, ph, x_guess, y_guess, vsys]
+    ig_NFW = [rho_h, Rh, incl, phi, x_guess, y_guess, vsys]
     # ig_iso = [-1, 1, 1000, 4, 0.001, 25, incl, ph, x_guess, y_guess, vsys]
     # ig_iso = [0.0001, 4, 2000, 25, 5, 250, incl, ph, x_guess, y_guess, vsys]
     # print(ig_iso)
@@ -368,18 +371,18 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask,
 
 
 def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID):
-    rho_h, Rh, incl, ph, x_guess, y_guess, vsys = params
-
+    rho_h, Rh, incl, phi, x_guess, y_guess, vsys = params
+    
     bounds_bur = [[-7, 2],  # Halo density [log(Msun/pc^3)]
-                  [0.1, 1000],  # Halo radius [kpc]
-                  [incl -(np.pi /6), 0.46 *np.pi],  # Inclination angle
-                  [0, 2.2 * np.pi],  # Phase angle
-                  [x_guess - 10, x_guess + 10],  # center_x
-                  [y_guess - 10, y_guess + 10],  # center_y
+                  [1, 1000],  # Halo radius [kpc]
+                  [max(0,incl -(np.pi /6)), min(0.46 *np.pi,incl+(np.pi/6))],  # Inclination angle
+                  [max(0,phi-(np.pi /12)), min(2.2 * np.pi,phi+(np.pi/12))],  # Phase angle
+                  [x_guess - 5, x_guess + 5],  # center_x
+                  [y_guess - 5, y_guess + 5],  # center_y
                   [-100, 100]]  # systemic velocity
 
     
-    ig_bur = [rho_h, Rh, incl, ph, x_guess, y_guess, vsys]
+    ig_bur = [rho_h, Rh, incl, phi, x_guess, y_guess, vsys]
     bestfit_bur = minimize(nloglikelihood_bur_flat,
                            ig_bur,
                            args=(rhob, Rb, SigD, Rd, scale, shape,
@@ -488,6 +491,8 @@ def calc_hessian(fit, rhob, Rb, SigD, Rd, fit_function, scale, shape, vmap, ivar
     try:
         hess_inv = 2*np.linalg.inv(hess)
         fit_params_err = np.sqrt(np.diag(np.abs(hess_inv)))
+        
+        
     except np.linalg.LinAlgError:
         fit_params_err = np.nan*np.ones(len(bestfit_bur.x))
     
