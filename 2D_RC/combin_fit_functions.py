@@ -2,7 +2,7 @@ import numpy as np
 import numpy.ma as ma
 import RC_plotting_functions as RC
 from disk_mass import calc_mass_curve, fit_mass_curve
-from rotation_fitfunctions import parameterfit_bur, parameterfit_iso, parameterfit_NFW, calc_hessian
+from rotation_fitfunctions import parameterfit_bur, parameterfit_iso, parameterfit_NFW, calc_hessian, find_incl
 
 H_0 = 100  # Hubble's Constant in units of h km/s/Mpc
 c = 299792.458  # Speed of light in units of km/s
@@ -12,6 +12,7 @@ def combination_fit(sMass_density, sMass_density_err, r_band, vmap, ivar, vmap_m
     
     
     rho_h0, Rh_0, axis_ratio, phi, x0, y0,  vsys_0 = para_guesses
+    incl = find_incl(axis_ratio)
     scale = (0.5 * z * c / H_0) * 1000 / 206265
     param = rho_h0, Rh_0, incl, phi, x0, y0, vsys_0
     shape = vmap.shape
@@ -25,16 +26,16 @@ def combination_fit(sMass_density, sMass_density_err, r_band, vmap, ivar, vmap_m
 #total fit
     print("Fitting velocity map")
     if fit_function == 'Isothermal':
-        best_fit = parameterfit_iso(para_guesses, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+        best_fit = parameterfit_iso(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                        param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
                                        shape, vmap, ivar, vmap_mask, gal_ID)
     elif fit_function == 'NFW':
-        best_fit = parameterfit_NFW(para_guesses, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+        best_fit = parameterfit_NFW(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                        param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
                                        shape, vmap, ivar, vmap_mask, gal_ID)
    
     elif fit_function == 'Burkert':
-        best_fit = parameterfit_bur(para_guesses, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+        best_fit = parameterfit_bur(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
                                        param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
                                        shape, vmap, ivar, vmap_mask, gal_ID)
     else:

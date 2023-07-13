@@ -25,31 +25,36 @@ H_0 = 100  # Hubble's Constant in units of h km/s/Mpc
 c = 299792.458  # Speed of light in units of km/s
 #####################################################
 
-FILE_IDS = ['7443-12705']
+#FILE_IDS = ['7443-12705']  use if directly naming files
+batchnum = 0
 RUN_ALL_GALAXIES = False
 fit_function = "Isothermal"
 smoothness_max = 2.0
 
 #########################################################
 
-
+#for bluehive
 IMAGE_DIR = '/scratch/lstroud3/RotationCurves/Images/'
+OUT_FILE_FOLDER = IMAGE_DIR + fit_function + "/"
 # Create directory if it does not already exist
 if not os.path.isdir( IMAGE_DIR):
     os.makedirs( IMAGE_DIR)
-
-#for bluehive
+if not os.path.isdir(OUT_FILE_FOLDER):
+    os.makedirs(OUT_FILE_FOLDER)
 MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr17/manga/spectro/'
 MASS_MAP_FOLDER = MANGA_FOLDER + 'pipe3d/'
 VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
 DRP_FILENAME = MANGA_FOLDER + 'redux/v3_1_1/' + 'drpall-v3_1_1.fits'
 MORPH_FILE = '/home/lstroud3/Documents/manga_visual_morpho-2.0.1.fits'
+
+
 ##############################################################
 #Read in the galaxy information
 
 DRP_table = Table.read( DRP_FILENAME, format='fits')
 DRP_index = {}
 index = []
+FILE_IDS = DRP_table['plateifu'][batchnum:batchnum+1000] #use to take rows of the DRPall
 for i in range(len(DRP_table)):
     galaxy_ID = DRP_table['plateifu'][i]
     DRP_index[galaxy_ID] = i
@@ -116,13 +121,16 @@ out_table['x0 err'] = np.nan
 out_table['y0 err'] = np.nan
 out_table['vsys err'] = np.nan
 out_table['chi2'] = np.nan
+out_table['fit flag'] = np.nan
 #####################################################################
+galcount = 0 
 for gal_ID in FILE_IDS:
+    galcount += 1
+    TIME = datetime.datetime.now()
     i_DRP = DRP_index[gal_ID]
-    i_morph = Morph_index[gal_ID]
     i_gal = out_index[gal_ID]
-    print(i_gal)
     if (DRP_table['mngtarg1'][i_DRP] > 0) or (gal_ID in ['9037-9102']):
+        i_morph = Morph_index[gal_ID]
         maps = extract_data(VEL_MAP_FOLDER,gal_ID,['Ha_vel', 'r_band', 'Ha_flux', 'Ha_sigma'])
         sMass_density, sMass_density_err = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
         SN_map = maps['Ha_flux'] * np.sqrt(maps['Ha_flux_ivar'])
@@ -156,7 +164,7 @@ for gal_ID in FILE_IDS:
             num_masked += 1
         
         
-        if fit_flag == 0:
+        else:
             axis_ratio = DRP_table['nsa_sersic_ba'][i_DRP]
             incl = find_incl(axis_ratio)
             phi = DRP_table['nsa_elpetro_phi'][i_DRP]
@@ -173,7 +181,7 @@ for gal_ID in FILE_IDS:
     
     ################################################
             fit = []
-            for i in range(30):
+            for i in range(50):
                 ##disk fit
                 #print("Fitting disk")
                 
@@ -182,8 +190,11 @@ for gal_ID in FILE_IDS:
                 
                 mass_data_table = calc_mass_curve(sMass_density, sMass_density_err, maps['r_band'], \
                                                   sM_mask, x0, y0, axis_ratio, phi, z, gal_ID)
-                
+                if len(mass_data_table)<10:
+                    fit_flag = -5
+                    break;
                 param_outputs = fit_mass_curve(mass_data_table, gal_ID, 'bulge')
+                
                 if param_outputs == None:
                     fit_flag = -5
                     break;
@@ -214,7 +225,7 @@ for gal_ID in FILE_IDS:
                 if np.abs(best_fit[2]-param[2])<0.001 and np.abs(best_fit[4]-param[4])<1 and np.abs(best_fit[3]-param[3])<0.0017 \
                         and np.abs(best_fit[5]-param[5])<1 and np.abs(best_fit[6]-param[6])<0.01:
                     fit_flag = i
-                    #print("Iteration Converged")
+                    print("Converged")
                     break
                 
                 param = best_fit
@@ -263,6 +274,8 @@ for gal_ID in FILE_IDS:
                                        IMAGE_DIR = IMAGE_DIR, IMAGE_FORMAT='png')
 
 
-    out_table['fit_flag'] = fit_flag
-out_table.write('outputtabletest',format='fits',overwrite = True)
-print('Runtime:', datetime.datetime.now() - START)
+        out_table['fit flag'][i_gal] = fit_flag
+    print(gal_ID," Time: ",datetime.datetime.now() - TIME )
+    if galcount%100 == 0:
+        out_table.write(OUT_FILE_FOLDER+'batch'+batchnum,format='fits',overwrite = True)
+print('Runtime:',datetime.datetime.now() - START )

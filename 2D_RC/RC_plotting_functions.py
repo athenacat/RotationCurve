@@ -15,7 +15,7 @@ from disk_mass_plotting_functions import plot_fitted_disk_rot_curve
 from disk_mass_functions import chi2_mass
 
 from rotation_fitfunctions import find_incl
-
+import os
 import sys
 sys.path.insert(1,"main/")
 from galaxy_component_functions_cython import vel_tot_bur, vel_tot_iso, vel_tot_NFW, disk_vel, bulge_vel, halo_vel_NFW, halo_vel_bur, halo_vel_iso
@@ -335,7 +335,12 @@ def plot_rot_curve(mHa_vel,
         ax.set_ylabel('Rotational velocity [km/s]')
         plt.legend()
     if IMAGE_DIR != None:
-        plt.savefig(IMAGE_DIR + gal_ID + ' rotation curve ' + halo_model,format=IMAGE_FORMAT)
+        
+        if not os.path.isdir( IMAGE_DIR + '/tot_vel_curves)'):
+            os.makedirs( IMAGE_DIR + '/tot_vel_curves')
+        
+        
+        plt.savefig(IMAGE_DIR + '/tot_vel_curves/' + gal_ID + ' rotation curve ' + halo_model,format=IMAGE_FORMAT)
     ############################################################################
 
 
@@ -440,4 +445,8 @@ def plot_totfit_panel (ID, shape, scale, vfit, fit_function, vmask, vmasked, iva
     
     panel_fig.tight_layout()
     if IMAGE_DIR != None:
+        
+        
+        
+        
         plt.savefig(IMAGE_DIR+ID + "_" + fit_function + "_diagonistic")

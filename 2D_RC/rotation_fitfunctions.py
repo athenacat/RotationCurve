@@ -109,6 +109,8 @@ def find_axis_ratio(incl):
 
 def find_incl(axis_ratio):
     incl = np.arccos(np.sqrt((axis_ratio**2 - 0.2**2)/(1-0.2**2)))
+    if incl == np.nan:
+        incl = 0
     return incl
 
 """
@@ -292,7 +294,6 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask,
     
     rho_h, Rh, incl, phi, x_guess, y_guess, vsys = params
     
-    print('incl:',incl)
     # Isothermal Fitting
     bounds_iso = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [1, 1000],  # Halo radius [kpc]
