@@ -154,7 +154,7 @@ def calc_mass_curve(sMass_density,
     # If there is unmasked data in the map, execute the function as normal.
     #---------------------------------------------------------------------------
     else:
-        print('finding mass curve')
+        print('finding mass curve', flush=True)
         mass_vel_table = find_mass_curve(z, 
                                          map_mask,
                                          msMass_density,
@@ -321,7 +321,7 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
         # Determine uncertainties in the fitted parameters
         #-----------------------------------------------------------------------
         #np.save('Pipe3D_diskMass_map_Hessians/' + gal_ID + '_cov.npy', pconv)
-        np.save(gal_ID + '_cov.npy', pconv)
+        np.save('Hessians/'+gal_ID + '_cov.npy', pconv)
 
         perr = np.sqrt(np.diag(pconv))
         #-----------------------------------------------------------------------

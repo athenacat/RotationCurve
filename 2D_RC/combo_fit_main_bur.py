@@ -28,7 +28,7 @@ c = 299792.458  # Speed of light in units of km/s
 #FILE_IDS = ['10219-9102','10220-12701']  #use if directly naming files
 batchnum = int(sys.argv[1])
 RUN_ALL_GALAXIES = False
-fit_function = "Isothermal"
+fit_function = "Burkert"
 smoothness_max = 2.0
 
 #########################################################
@@ -54,7 +54,7 @@ MORPH_FILE = '/home/lstroud3/Documents/manga_visual_morpho-2.0.1.fits'
 DRP_table = Table.read( DRP_FILENAME, format='fits')
 DRP_index = {}
 index = []
-FILE_IDS = DRP_table['plateifu'][300+(batchnum*1000):((batchnum+1)*1000)+300] #use to take rows of the DRPall
+FILE_IDS = DRP_table['plateifu'][(batchnum*1000):((batchnum+1)*1000)] #use to take rows of the DRPall
 for i in range(len(DRP_table)):
     galaxy_ID = DRP_table['plateifu'][i]
     DRP_index[galaxy_ID] = i

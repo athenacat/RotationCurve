@@ -327,7 +327,7 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask,
         return bestfit_iso.x #, fit_params_err
     else:
         print("Fit failed: ",bestfit_iso.message)
-        return np.nan*np.ones(len(bestfit_iso.x))
+        return None
 
 def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID):
     rho_h, Rh, incl, phi, x_guess, y_guess, vsys = params
@@ -367,7 +367,7 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask,
         return bestfit_NFW.x #, fit_params_err
     else:
         print("Fit failed: ",bestfit_NFW.message)
-        return np.nan*np.ones(len(bestfit_NFW.x))
+        return None
     
 
 
@@ -408,7 +408,7 @@ def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask,
         return bestfit_bur.x #, fit_params_err
     else:
         print("Fit failed: ",bestfit_bur.message)
-        return np.nan*np.ones(len(bestfit_bur.x))
+        return None
     
     
 def chi2(vmap, ivar, vmask, shape, scale, best_fit, fit_function):

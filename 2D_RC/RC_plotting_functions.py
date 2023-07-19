@@ -336,11 +336,7 @@ def plot_rot_curve(mHa_vel,
         plt.legend()
     if IMAGE_DIR != None:
         
-        if not os.path.isdir( IMAGE_DIR + '/tot_vel_curves)'):
-            os.makedirs( IMAGE_DIR + '/tot_vel_curves')
-        
-        
-        plt.savefig(IMAGE_DIR + '/tot_vel_curves/' + gal_ID + ' rotation curve ' + halo_model,format=IMAGE_FORMAT)
+        plt.savefig(IMAGE_DIR + 'tot_vel_curves/' + gal_ID + ' rotation curve ' + halo_model,format=IMAGE_FORMAT)
     ############################################################################
 
 
