@@ -56,8 +56,13 @@ def find_phi(center_coords, phi_angle, vel_map):
     # phi = phi_angle
 
     # Extract "systemic" velocity (velocity at center spaxel)
-    v_sys = vel_map[center_coords]
-
+    if ma.getmask(vel_map[center_coords]):
+        v_sys = 0
+    else: 
+        v_sys = vel_map[center_coords]
+    
+    
+    
     print(v_sys)
 
     print(center_coords)
@@ -108,9 +113,10 @@ def find_axis_ratio(incl):
     return axis_ratio
 
 def find_incl(axis_ratio):
-    incl = np.arccos(np.sqrt((axis_ratio**2 - 0.2**2)/(1-0.2**2)))
-    if incl == np.nan:
-        incl = 0
+    if axis_ratio > 0.2:
+        incl = np.arccos(np.sqrt((axis_ratio**2 - 0.2**2)/(1-0.2**2)))
+    else:
+        incl = np.arccos(axis_ratio)
     return incl
 
 """

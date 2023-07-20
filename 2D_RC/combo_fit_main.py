@@ -130,7 +130,7 @@ for gal_ID in FILE_IDS:
     print(gal_ID, flush = True)
     i_DRP = DRP_index[gal_ID]
     i_gal = out_index[gal_ID]
-    if (DRP_table['mngtarg1'][i_DRP] > 0) or (gal_ID in ['9037-9102']):
+    if (DRP_table['mngtarg1'][i_DRP] > 0 and DRP_table['mngtarg1'][i_DRP] < 8192) or (gal_ID in ['9037-9102']):
         i_morph = Morph_index[gal_ID]
         maps = extract_data(VEL_MAP_FOLDER,gal_ID,['Ha_vel', 'r_band', 'Ha_flux', 'Ha_sigma'])
         sMass_density, sMass_density_err = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
@@ -175,15 +175,98 @@ for gal_ID in FILE_IDS:
             
             if gal_ID == '10220-12703':
                 center = (38,37)
+                
+            elif gal_ID == '8466-12705':
+                center = (37,42)
+                
+            elif gal_ID == '10222-6102':
+                center = (27,27)
+            elif gal_ID == '10516-12705':
+                center = (37,38)
+            elif gal_ID == '11830-3704':
+                center = (20,19)        
+                
+            elif gal_ID == '8133-6102':
+                center = (28,27)    
+            elif gal_ID == '8657-3702':
+                center = (21,22)                    
+            
+            elif gal_ID == '9879-6101':
+                center = (30,27)      
+            elif gal_ID == '9879-6101':
+                center = (35,40) 
+            elif gal_ID == '9879-6101':
+                center = (35,40)            
+            elif gal_ID == '7443-3701':
+                center = (22,21)  
+            elif gal_ID == '7443-3701':
+                center = (22,21)  
+            elif gal_ID == '8335-3704':
+                center = (23,21)
+            elif gal_ID == '9514-3702':
+                center = (21,23)
+            elif gal_ID == '8728-6104':
+                center = (25,25)
             else:
                 center = np.unravel_index(ma.argmax(maps['r_band']), shape)
             x0 = center[0]
             y0 = center[1]
-            phi = find_phi(center, phi, maps['vmasked'])
+            
+            
+            phi_guess = find_phi(center, phi, maps['vmasked'])
+            
+            if gal_ID =='8134-6102':
+                phi_guess += 0.25 * np.pi
+
+            elif gal_ID in ['8932-12704', '8252-6103']:
+                phi_guess -= 0.25 * np.pi
+
+            elif gal_ID in ['8613-12703', '8726-1901', '8615-1901', '8325-9102',
+                                 '8274-6101', '9027-12705', '9868-12702', '8135-1901',
+                                 '7815-1901', '8568-1901', '8989-1902', '8458-3701',
+                                 '9000-1901', '9037-3701', '8456-6101']:
+                phi_guess += 0.5 * np.pi
+
+            elif gal_ID in ['9864-3702', '8601-1902']:
+                phi_guess -= 0.5 * np.pi
+
+            elif gal_ID in ['9502-12702']:
+                phi_guess += 0.75 * np.pi
+
+            elif gal_ID in ['7495-6104']:
+                phi_guess -= 0.8 * np.pi
+
+            elif gal_ID in ['7495-12704','7815-6103','9029-12705', '8137-3701', '8618-3704', '8323-12701',\
+                                 '8942-3703', '8333-12701', '8615-6103', '9486-3704',\
+                                 '8937-1902', '9095-3704', '8466-1902', '9508-3702',\
+                                 '8727-3703', '8341-12704', '8655-6103']:
+                phi_guess += np.pi
+
+            elif gal_ID in ['7815-9102']:
+                phi_guess -= np.pi
+ 
+            elif gal_ID in ['7443-9101', '7443-3704']:
+                phi_guess -= 1.06 * np.pi
+
+            elif gal_ID in ['8082-1901', '8078-3703', '8551-1902', '9039-3703',\
+                                 '8624-1902', '8948-12702', '8443-6102', '8259-1901']:
+                phi_guess += 1.5 * np.pi
+
+            elif gal_ID in ['8241-12705', '8326-6102']:
+                phi_guess += 1.75 * np.pi
+
+            elif gal_ID in ['7443-6103']:
+                phi_guess += 2.3 * np.pi
+
+
+            phi_guess = phi_guess % (2 * np.pi)
+            
+            
+            
             rhoh = -1.5
             Rh = 10
             vsys = 0
-            param = [rhoh,Rh,incl,phi,x0,y0,vsys]
+            param = [rhoh,Rh,incl,phi_guess,x0,y0,vsys]
     
     ################################################
             fit = []
@@ -281,8 +364,9 @@ for gal_ID in FILE_IDS:
 
 
         out_table['fit flag'][i_gal] = fit_flag
+        print(fit_flag, flush=True)
     print(gal_ID," Time: ",datetime.datetime.now() - TIME , flush=True)
-    print(fit_flag, flush=True)
+
     if galcount%20 == 0:
         out_table.write(OUT_FILE_FOLDER+str(batchnum+1),format='fits',overwrite = True)
 print('Runtime:',datetime.datetime.now() - START, flush = True)
