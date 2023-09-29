@@ -11,7 +11,7 @@ import numpy.ma as ma
 
 
 from astropy.io import fits
-from disk_mass_plotting_functions import plot_fitted_disk_rot_curve
+#from disk_mass_plotting_functions import plot_fitted_disk_rot_curve
 from disk_mass_functions import chi2_mass
 
 from rotation_fitfunctions import find_incl

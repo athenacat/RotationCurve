@@ -380,7 +380,7 @@ def fit_mass_curve(data_table, gal_ID, fit_function=None, IMAGE_DIR=None, IMAGE_
             
         #-----------------------------------------------------------------------
         
-    except RuntimeError:
+    except:
         print(gal_ID, 'fit did not converge.', flush=True)
 
         best_fit_values = None

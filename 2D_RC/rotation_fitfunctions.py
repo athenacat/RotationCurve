@@ -77,7 +77,7 @@ def find_phi(center_coords, phi_angle, vel_map):
         delta_x = int(center_coords[1] * f)
         delta_y = int(delta_x / np.tan(phi))
         semi_major_axis_spaxel = np.subtract(center_coords, (-delta_y, delta_x))
-
+        print(semi_major_axis_spaxel,f)
         '''
         print(center_coords)
         print(semi_major_axis_spaxel)

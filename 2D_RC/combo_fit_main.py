@@ -26,9 +26,9 @@ c = 299792.458  # Speed of light in units of km/s
 #####################################################
 
 #FILE_IDS = ['10219-9102','10220-12701']  #use if directly naming files
-batchnum = int(sys.argv[1])
+batchnum =0 #int(sys.argv[1])
 RUN_ALL_GALAXIES = False
-fit_function = "Isothermal"
+fit_function = "Burkert"
 smoothness_max = 2.0
 
 #########################################################
@@ -36,11 +36,13 @@ smoothness_max = 2.0
 #for bluehive
 IMAGE_DIR = '/scratch/lstroud3/RotationCurves/Images/'
 OUT_FILE_FOLDER = IMAGE_DIR + fit_function + "/"
+"""
 # Create directory if it does not already exist
 if not os.path.isdir( IMAGE_DIR):
     os.makedirs( IMAGE_DIR)
 if not os.path.isdir(OUT_FILE_FOLDER):
     os.makedirs(OUT_FILE_FOLDER)
+    """
 MANGA_FOLDER = '/scratch/kdougla7/data/SDSS/dr17/manga/spectro/'
 MASS_MAP_FOLDER = MANGA_FOLDER + 'pipe3d/'
 VEL_MAP_FOLDER = MANGA_FOLDER + 'analysis/v3_1_1/3.1.0/HYB10-MILESHC-MASTARSSP/'
@@ -54,7 +56,7 @@ MORPH_FILE = '/home/lstroud3/Documents/manga_visual_morpho-2.0.1.fits'
 DRP_table = Table.read( DRP_FILENAME, format='fits')
 DRP_index = {}
 index = []
-FILE_IDS = DRP_table['plateifu'][300+(batchnum*1000):((batchnum+1)*1000)+300] #use to take rows of the DRPall
+FILE_IDS =DRP_table['plateifu'][1980:2000] #DRP_table['plateifu'][(batchnum*1000):((batchnum+1)*1000)] #use to take rows of the DRPall
 for i in range(len(DRP_table)):
     galaxy_ID = DRP_table['plateifu'][i]
     DRP_index[galaxy_ID] = i
@@ -131,41 +133,49 @@ for gal_ID in FILE_IDS:
     i_DRP = DRP_index[gal_ID]
     i_gal = out_index[gal_ID]
     if (DRP_table['mngtarg1'][i_DRP] > 0 and DRP_table['mngtarg1'][i_DRP] < 8192) or (gal_ID in ['9037-9102']):
-        i_morph = Morph_index[gal_ID]
+        if gal_ID in Morph_index.keys():
+            i_morph = Morph_index[gal_ID]
         maps = extract_data(VEL_MAP_FOLDER,gal_ID,['Ha_vel', 'r_band', 'Ha_flux', 'Ha_sigma'])
-        sMass_density, sMass_density_err = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
-        SN_map = maps['Ha_flux'] * np.sqrt(maps['Ha_flux_ivar'])
-        vmap_mask = maps['Ha_vel_mask'] + (SN_map < 5)
-        sM_mask = maps['Ha_vel_mask']
-        maps['vmasked'] = ma.array(maps['Ha_vel'], mask=vmap_mask)
-        maps['ivarmasked'] = ma.array(maps['Ha_vel_ivar'], mask=vmap_mask)
-        z = DRP_table['nsa_z'][i_DRP]
-        
-        ###checking if galaxy meets criteria to fit
-        fit_flag = 0
-        map_smoothness = how_smooth(maps['Ha_vel'], maps['Ha_vel_mask'])
-        
-        if map_smoothness > smoothness_max:
-            fit_flag = -1
-            print('Not smooth:'+gal_ID, flush=True)
-            num_not_smooth += 1
-        
-        elif Morph_table['TType'][i_morph] <= 0:
-            fit_flag = -2
-            num_wrong_ttype += 1
-            print('Not ttype:'+gal_ID, flush=True)
-        elif Morph_table['Tidal'][i_morph] != 0:
-            fit_flag = -3
-            print('tidal:'+gal_ID, flush=True)
-            num_tidal += 1
-        
-        elif (maps['vmasked'].count() / (maps['Ha_vel'].shape[0]*maps['Ha_vel'].shape[1])) < 0.05:
-            fit_flag = -4
-            print('masked:'+gal_ID, flush=True)
-            num_masked += 1
-        
-        
+        if gal_ID != '11828-1902':
+            sMass_density, sMass_density_err = extract_Pipe3d_data(MASS_MAP_FOLDER, gal_ID)
         else:
+            fit_flag = -10
+        if maps == None:
+            fit_flag = -10
+        else:
+            SN_map = maps['Ha_flux'] * np.sqrt(maps['Ha_flux_ivar'])
+            vmap_mask = maps['Ha_vel_mask'] + (SN_map < 5)
+            sM_mask = maps['Ha_vel_mask']
+            maps['vmasked'] = ma.array(maps['Ha_vel'], mask=vmap_mask)
+            maps['ivarmasked'] = ma.array(maps['Ha_vel_ivar'], mask=vmap_mask)
+            maps['rbandmasked'] = ma.array(maps['r_band'], mask = maps['Ha_vel_mask'])
+            z = DRP_table['nsa_z'][i_DRP]
+        
+            ###checking if galaxy meets criteria to fit
+            fit_flag = 0
+            map_smoothness = how_smooth(maps['Ha_vel'], maps['Ha_vel_mask'])
+        
+            if map_smoothness > smoothness_max:
+                fit_flag = -1
+                print('Not smooth:'+gal_ID, flush=True)
+                num_not_smooth += 1
+        
+            elif gal_ID in Morph_index.keys() and Morph_table['TType'][i_morph] <= 0:
+                fit_flag = -2
+                num_wrong_ttype += 1
+                print('Not ttype:'+gal_ID, flush=True)
+            elif gal_ID in Morph_index.keys() and Morph_table['Tidal'][i_morph] != 0:
+                fit_flag = -3
+                print('tidal:'+gal_ID, flush=True)
+                num_tidal += 1
+            
+            elif (maps['vmasked'].count() / (maps['Ha_vel'].shape[0]*maps['Ha_vel'].shape[1])) < 0.05:
+                fit_flag = -4
+                print('masked:'+gal_ID, flush=True)
+                num_masked += 1
+            
+        
+        if fit_flag == 0:
             print("Getting parameters:",flush=True)
             axis_ratio = DRP_table['nsa_sersic_ba'][i_DRP]
             incl = find_incl(axis_ratio)
@@ -173,42 +183,36 @@ for gal_ID in FILE_IDS:
             shape = maps['vmasked'].shape
             scale = (0.5 * z * c / H_0) * 1000 / 206265  # kpc
             
-            if gal_ID == '10220-12703':
-                center = (38,37)
+            if gal_ID in ['10220-12703','10516-12705','10520-12705','12066-12703',\
+                          '11012-12703','8239-12703','8941-12703','8717-12705']:
+                center = (37,37)
                 
-            elif gal_ID == '8466-12705':
+            elif gal_ID in ['8466-12705','11021-12702']:
                 center = (37,42)
                 
-            elif gal_ID == '10222-6102':
+            elif gal_ID in ['10222-6102','8133-6102']:
                 center = (27,27)
-            elif gal_ID == '10516-12705':
-                center = (37,38)
+
             elif gal_ID == '11830-3704':
-                center = (20,19)        
-                
-            elif gal_ID == '8133-6102':
-                center = (28,27)    
-            elif gal_ID == '8657-3702':
-                center = (21,22)                    
+                center = (20,19)         
             
             elif gal_ID == '9879-6101':
                 center = (30,27)      
-            elif gal_ID == '9879-6101':
-                center = (35,40) 
-            elif gal_ID == '9879-6101':
-                center = (35,40)            
-            elif gal_ID == '7443-3701':
-                center = (22,21)  
-            elif gal_ID == '7443-3701':
-                center = (22,21)  
-            elif gal_ID == '8335-3704':
-                center = (23,21)
-            elif gal_ID == '9514-3702':
-                center = (21,23)
+
+            elif gal_ID in ['7443-3701','8335-3704','9514-3702','8318-3702','8657-3702','7815-3704','8341-3702']:
+                center = (22,22)  
+
             elif gal_ID == '8728-6104':
                 center = (25,25)
+            elif gal_ID in ['10223-12704','10223-12704']:
+                center = (41,31)
+            elif gal_ID == '11945-9101':
+                center = (31,31)
+            
+            elif gal_ID == '12066-12703':
+                center = (37,30)
             else:
-                center = np.unravel_index(ma.argmax(maps['r_band']), shape)
+                center = np.unravel_index(ma.argmax(maps['rbandmasked']), shape)
             x0 = center[0]
             y0 = center[1]
             
@@ -367,6 +371,6 @@ for gal_ID in FILE_IDS:
         print(fit_flag, flush=True)
     print(gal_ID," Time: ",datetime.datetime.now() - TIME , flush=True)
 
-    if galcount%20 == 0:
-        out_table.write(OUT_FILE_FOLDER+str(batchnum+1),format='fits',overwrite = True)
+    if galcount%20 == 0 or N_files < 20:
+        out_table.write(OUT_FILE_FOLDER+"1980-2000"+'.fits',format='fits',overwrite = True)
 print('Runtime:',datetime.datetime.now() - START, flush = True)
