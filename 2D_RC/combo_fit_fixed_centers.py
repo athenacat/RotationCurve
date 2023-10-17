@@ -26,9 +26,9 @@ c = 299792.458  # Speed of light in units of km/s
 #####################################################
 
 #FILE_IDS = ['10219-9102','10220-12701']  #use if directly naming files
-batchnum =0 #int(sys.argv[1])
+#batchnum =0 #int(sys.argv[1])
 RUN_ALL_GALAXIES = False
-fit_function = "Isothermal"
+fit_function = sys.argv[1] #"Burkert"
 smoothness_max = 2.0
 
 #########################################################
@@ -51,12 +51,23 @@ MORPH_FILE = '/home/lstroud3/Documents/manga_visual_morpho-2.0.1.fits'
 
 
 ##############################################################
+#reading in fixed galaxies
+
+failed_object_table = Table.read('/scratch/lstroud3/RotationCurves/failed_objects_table.fits')
+
+
+
+####################################################3
+
 #Read in the galaxy information
 
 DRP_table = Table.read( DRP_FILENAME, format='fits')
 DRP_index = {}
 index = []
-FILE_IDS =DRP_table['plateifu'][1980:2000] #DRP_table['plateifu'][(batchnum*1000):((batchnum+1)*1000)] #use to take rows of the DRPall
+failed_centers = failed_object_table[failed_object_table['visual code']==5] #fixing find_phi 
+FILE_IDS = failed_centers['plateifu']
+#DRP_table['plateifu'][(batchnum*1000):((batchnum+1)*1000)] #use to take rows of the DRPall
+print(FILE_IDS)                       
 for i in range(len(DRP_table)):
     galaxy_ID = DRP_table['plateifu'][i]
     DRP_index[galaxy_ID] = i
@@ -184,37 +195,61 @@ for gal_ID in FILE_IDS:
             scale = (0.5 * z * c / H_0) * 1000 / 206265  # kpc
             
             if gal_ID in ['10220-12703','10516-12705','10520-12705','12066-12703',\
-                          '11012-12703','8239-12703','8941-12703','8717-12705']:
+                          '11012-12703','8239-12703','8941-12703','8717-12705',\
+                          '10841-12705','11018-12701','11743-12701','11751-12702',\
+                          '11824-12702','11832-12702','11865-12705','12651-12701',\
+                          '8088-12704','8438-12705','8711-12701','8950-12705','9037-9102'\
+                         '9498-12703',]:
                 center = (37,37)
                 
             elif gal_ID in ['8466-12705','11021-12702']:
                 center = (37,42)
                 
-            elif gal_ID in ['10222-6102','8133-6102']:
+            elif gal_ID in ['10222-6102','8133-6102','8252-6103']:
                 center = (27,27)
 
             elif gal_ID == '11830-3704':
                 center = (20,19)         
             
-            elif gal_ID == '9879-6101':
+            elif gal_ID in ['9879-6101','10845-6101','11758-6103','9872-6103']:
                 center = (30,27)      
 
             elif gal_ID in ['7443-3701','8335-3704','9514-3702','8318-3702','8657-3702','7815-3704','8341-3702']:
                 center = (22,22)  
 
-            elif gal_ID == '8728-6104':
+            elif gal_ID in ['8728-6104','12488-6102','8551-6104','8570-6104']:
                 center = (25,25)
-            elif gal_ID in ['10223-12704','10223-12704']:
+            elif gal_ID in ['10223-12704']:
                 center = (41,31)
             elif gal_ID == '11945-9101':
                 center = (31,31)
             
             elif gal_ID == '12066-12703':
                 center = (37,30)
+                         
+            elif gal_ID == '10495-12704':
+                center = (39,36)
+            
+            elif gal_ID in ['10515-3703','8651-3702']:
+                center = (20,25)
+            elif gal_ID in ['11021-12702','9891-12704']:
+                center = (35,40)
+            elif gal_ID in ['11823-12702','11947-12703']:
+                center = (40,40)
+            elif gal_ID == '8240-12705':
+                center = (45,45)
+            elif gal_ID in ['8613-12701','9890-12705']:
+                center = (40,37)
+            elif gal_ID == '8626-1902':
+                center = (17,17)
+            elif gal_ID == '9046-12705':
+                center = (30,35)
             else:
                 center = np.unravel_index(ma.argmax(maps['rbandmasked']), shape)
             x0 = center[0]
             y0 = center[1]
+            
+                           
             
             
             phi_guess = find_phi(center, phi, maps['vmasked'])
@@ -371,6 +406,6 @@ for gal_ID in FILE_IDS:
         print(fit_flag, flush=True)
     print(gal_ID," Time: ",datetime.datetime.now() - TIME , flush=True)
 
-    if galcount%20 == 0 or N_files < 20:
-        out_table.write(OUT_FILE_FOLDER+"1980-2000"+'.fits',format='fits',overwrite = True)
+    if True: #galcount%20 == 0 or N_files < 20:
+        out_table.write(OUT_FILE_FOLDER+"findphifix"+'.fits',format='fits',overwrite = True)
 print('Runtime:',datetime.datetime.now() - START, flush = True)

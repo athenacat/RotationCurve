@@ -51,61 +51,48 @@ def find_phi(center_coords, phi_angle, vel_map):
     '''
 
     # Convert phi_angle to radians
-    phi = phi_angle * np.pi / 180.
-
-    # phi = phi_angle
+    phi = phi_angle*np.pi/180.
 
     # Extract "systemic" velocity (velocity at center spaxel)
-    if ma.getmask(vel_map[center_coords]):
-        v_sys = 0
-    else: 
-        v_sys = vel_map[center_coords]
-    
-    
-    
-    print(v_sys)
-
-    print(center_coords)
-
-    print(phi)
+    v_sys = vel_map[center_coords]
 
     f = 0.4
 
     checkpoint_masked = True
 
-    while checkpoint_masked:
-        delta_x = int(center_coords[1] * f)
-        delta_y = int(delta_x / np.tan(phi))
-        semi_major_axis_spaxel = np.subtract(center_coords, (-delta_y, delta_x))
-        print(semi_major_axis_spaxel,f)
-        '''
-        print(center_coords)
-        print(semi_major_axis_spaxel)
-        '''
+    while checkpoint_masked and not vel_map.mask.all():
+        delta_x = center_coords[1]*f
+        delta_y = delta_x/np.tan(phi)
+        #semi_major_axis_spaxel = np.subtract(center_coords, (-delta_y, delta_x))
+        semi_major_axis_spaxel = np.array([int(center_coords[0] + delta_y), 
+                                            int(center_coords[1] - delta_x)])
+
+        in_map = True # check if pt along semi major axis is in the vel map
 
         for i in range(len(semi_major_axis_spaxel)):
             if semi_major_axis_spaxel[i] < 0:
-                semi_major_axis_spaxel[i] = 0
+                #semi_major_axis_spaxel[i] = 0
+                in_map = False
             elif semi_major_axis_spaxel[i] >= vel_map.shape[i]:
-                semi_major_axis_spaxel[i] = vel_map.shape[i] - 1
-            # elif time.time() - start_time >= 1000:
-            # lougoycheckpoint_masked = False
+                #semi_major_axis_spaxel[i] = vel_map.shape[i] - 1
+                in_map = False
 
         # Check value along semi-major axis
-        if vel_map.mask[tuple(semi_major_axis_spaxel)] == 0:
+        if in_map == False:
+            f *= 0.9
+        elif vel_map.mask[tuple(semi_major_axis_spaxel)] == 0:
             checkpoint_masked = False
-        # elif time.time() - start_time >= 3000:
-        # checkpoint_masked = False
         else:
             f *= 0.9
 
-    if vel_map[tuple(semi_major_axis_spaxel)] - v_sys < 0:
-        phi_adjusted = phi + np.pi
-    else:
+    if vel_map.mask.all() or vel_map[tuple(semi_major_axis_spaxel)] - v_sys >= 0:
         phi_adjusted = phi
+    else:
+        phi_adjusted = phi + np.pi
+
+    print(phi_adjusted)
 
     return phi_adjusted
-
 
 
 def find_axis_ratio(incl):
