@@ -283,15 +283,25 @@ def rot_incl_bur(shape, scale, params):
     return rotated_inclined_map
 """
 
-def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID):
+def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID, phibounds = None, inclbounds = None):
     
     rho_h, Rh, incl, phi, x_guess, y_guess, vsys = params
+    
+    # phi bounds
+    if phibounds == None:
+        phi_b=[max(0,phi-(np.pi /12)), min(2.2 * np.pi,phi+(np.pi/12))]
+    else:
+        phi_b = phibounds
+    if inclbounds == None:
+        incl_b = [max(0,incl -(np.pi /6)), min(0.46 *np.pi,incl+(np.pi/6))]
+    else:
+        incl_b = inclbounds    
     
     # Isothermal Fitting
     bounds_iso = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [1, 1000],  # Halo radius [kpc]
-                  [max(0,incl -(np.pi /6)), min(0.46 *np.pi,incl+(np.pi/6))],  # Inclination angle
-                  [max(0,phi-(np.pi /12)), min(2.2 * np.pi,phi+(np.pi/12))],  # Phase angle
+                  incl_b,  # Inclination angle
+                  phi_b,  # Phase angle
                   [x_guess - 5, x_guess + 5],  # center_x
                   [y_guess - 5, y_guess + 5],  # center_y
                   [-100, 100]]  # systemic velocity
@@ -322,13 +332,23 @@ def parameterfit_iso(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask,
         print("Fit failed: ",bestfit_iso.message)
         return None
 
-def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID):
+def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID, phibounds = None, inclbounds = None):
     rho_h, Rh, incl, phi, x_guess, y_guess, vsys = params
+    # phi bounds
+    if phibounds == None:
+        phi_b=[max(0,phi-(np.pi /12)), min(2.2 * np.pi,phi+(np.pi/12))]
+    else:
+        phi_b = phibounds
     
+    if inclbounds == None:
+        incl_b = [max(0,incl -(np.pi /6)), min(0.46 *np.pi,incl+(np.pi/6))]
+    else:
+        incl_b = inclbounds
+        
     bounds_nfw = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [1, 1000],  # Halo radius [kpc]
-                  [max(0,incl -(np.pi /6)), min(0.46 *np.pi,incl+(np.pi/6))],  # Inclination angle
-                  [max(0,phi-(np.pi /12)), min(2.2 * np.pi,phi+(np.pi/12))],  # Phase angle
+                  incl_b,  # Inclination angle
+                  phi_b,  # Phase angle
                   [x_guess - 5, x_guess + 5],  # center_x
                   [y_guess - 5, y_guess + 5],  # center_y
                   [-100, 100]]  # systemic velocity
@@ -364,13 +384,22 @@ def parameterfit_NFW(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask,
     
 
 
-def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID):
+def parameterfit_bur(params, rhob, Rb, SigD, Rd, scale, shape, vmap, ivar, mask, gal_ID,phibounds = None,inclbounds = None):
     rho_h, Rh, incl, phi, x_guess, y_guess, vsys = params
+        # phi bounds
+    if phibounds == None:
+        phi_b=[max(0,phi-(np.pi /12)), min(2.2 * np.pi,phi+(np.pi/12))]
+    else:
+        phi_b = phibounds
+    if inclbounds == None:
+        incl_b = [max(0,incl -(np.pi /6)), min(0.46 *np.pi,incl+(np.pi/6))]
+    else:
+        incl_b = inclbounds    
     
     bounds_bur = [[-7, 2],  # Halo density [log(Msun/pc^3)]
                   [1, 1000],  # Halo radius [kpc]
-                  [max(0,incl -(np.pi /6)), min(0.46 *np.pi,incl+(np.pi/6))],  # Inclination angle
-                  [max(0,phi-(np.pi /12)), min(2.2 * np.pi,phi+(np.pi/12))],  # Phase angle
+                  incl_b,  # Inclination angle
+                  phi_b,  # Phase angle
                   [x_guess - 5, x_guess + 5],  # center_x
                   [y_guess - 5, y_guess + 5],  # center_y
                   [-100, 100]]  # systemic velocity

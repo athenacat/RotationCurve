@@ -164,8 +164,6 @@ for gal_ID in FILE_IDS:
         maps['rbandmasked'] = ma.array(maps['r_band'], mask = maps['Ha_vel_mask'])
         z = DRP_table['nsa_z'][i_DRP]
         print("Getting parameters:",flush=True)
-        axis_ratio = DRP_table['nsa_sersic_ba'][i_DRP]
-        incl = find_incl(axis_ratio)
         shape = maps['vmasked'].shape
         scale = (0.5 * z * c / H_0) * 1000 / 206265  # kpc
             
@@ -231,101 +229,102 @@ for gal_ID in FILE_IDS:
         vsys = 0
         
         phi_guesses = [10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,179.99]
+        incl_guesses = [np.pi/15, 2* np.pi/15, 3* np.pi/15, 4* np.pi/15, 5* np.pi/15, 6* np.pi/15]
         
         out_table['chi2'][i_gal] = -1
     ################################################
         for phi in phi_guesses:
-            print(phi)
-            fit_flag = 0
-            phi_guess = find_phi(center,phi,maps['vmasked'])
-            param = [rhoh,Rh,incl,phi_guess,x0,y0,vsys]
-            fit = []
-            no_fits = True
-            phi_bounds = [max(0,phi_guess-(np.pi /12)), min(2.2 * np.pi,phi_guess+(np.pi/12))]
-            incl_bounds = [max(0,incl -(np.pi /6)), min(0.46 *np.pi,incl+(np.pi/6))]
-            for i in range(50):
-                ##disk fit
-                #print("Fitting disk")
+            for incl in incl_guesses:
+                fit_flag = 0
+                phi_guess = find_phi(center,phi,maps['vmasked'])
+                param = [rhoh,Rh,incl,phi_guess,x0,y0,vsys]
+                fit = []
+                no_fits = True
+                phi_bounds = [max(0,phi_guess-(np.pi /12)), min(2.2 * np.pi,phi_guess+(np.pi/12))]
+                incl_bounds = [max(0,incl -(np.pi /6)), min(0.46 *np.pi,incl+(np.pi/6))]
+                for i in range(50):
+                    ##disk fit
+                    #print("Fitting disk")
                 
-                rhoh,Rh,incl,ph,x0,y0,vsys = param
-                axis_ratio = find_axis_ratio(incl)
+                    rhoh,Rh,incl,ph,x0,y0,vsys = param
+                    axis_ratio = find_axis_ratio(incl)
                 
-                mass_data_table = calc_mass_curve(sMass_density, sMass_density_err, maps['r_band'], \
-                                                  sM_mask, x0, y0, axis_ratio, ph, z, gal_ID)
+                    mass_data_table = calc_mass_curve(sMass_density, sMass_density_err, maps['r_band'], \
+                                                      sM_mask, x0, y0, axis_ratio, ph, z, gal_ID)
+    
+                    param_outputs = fit_mass_curve(mass_data_table, gal_ID, 'bulge')
 
-                param_outputs = fit_mass_curve(mass_data_table, gal_ID, 'bulge')
-
-                if param_outputs == None:
-                    fit_flag = -5
-                    break;
-                #total fit
-                print("Fitting velocity map", flush=True)
-                if fit_function == 'Isothermal':
-                    best_fit = parameterfit_iso(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
-                                                   param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
-                                                   shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID,phi_bounds,incl_bounds)
-                elif fit_function == 'NFW':
-                    best_fit = parameterfit_NFW(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
-                                                   param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
-                                                   shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID,phi_bounds,incl_bounds)
+                    if param_outputs == None:
+                        fit_flag = -5
+                        break;
+                    #total fit
+                    print("Fitting velocity map", flush=True)
+                    if fit_function == 'Isothermal':
+                        best_fit = parameterfit_iso(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+                                                       param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
+                                                       shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID,phi_bounds,incl_bounds)
+                    elif fit_function == 'NFW':
+                        best_fit = parameterfit_NFW(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+                                                       param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
+                                                       shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID,phi_bounds,incl_bounds)
                
-                elif fit_function == 'Burkert':
-                    best_fit = parameterfit_bur(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
-                                                   param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
-                                                   shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID,phi_bounds,incl_bounds)
-                else:
-                    print("Fit function not known", flush=True)
+                    elif fit_function == 'Burkert':
+                        best_fit = parameterfit_bur(param, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+                                                       param_outputs['Sigma_disk'], param_outputs['R_disk'], scale,\
+                                                       shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID,phi_bounds,incl_bounds)
+                    else:
+                        print("Fit function not known", flush=True)
                 
-                if best_fit is None:
-                    fit_flag = -6
-                    break;
-                
-                
-                #check if fit is close enough to past iteration
-                if np.abs(best_fit[2]-param[2])<0.001 and np.abs(best_fit[4]-param[4])<1 and np.abs(best_fit[3]-param[3])<0.0017 \
-                        and np.abs(best_fit[5]-param[5])<1 and np.abs(best_fit[6]-param[6])<0.01:
-                    fit_flag = i
-                    print("Converged", flush=True)
-                    break
-                
-                param = best_fit
+                    if best_fit is None:
+                        fit_flag = -6
+                        break;
                 
                 
-            if fit_flag >= 0:
-                no_fits = False
-                fit = [param_outputs['rho_bulge'], param_outputs['R_bulge'],\
-                                       param_outputs['Sigma_disk'], param_outputs['R_disk'], \
-                                       best_fit[0], best_fit[1], best_fit[2], best_fit[3], \
-                                       best_fit[4],best_fit[5],best_fit[6]]
-            
-                sM_chi2 = chi2_mass(fit[0:4], mass_data_table['radius'], mass_data_table['star_vel'], mass_data_table['star_vel_err'])               
-                c2 = chi2(maps['vmasked'], maps['ivarmasked'],vmap_mask,shape,scale,fit,fit_function)[1]
-                if c2 < out_table['chi2'][i_gal] or out_table['chi2'][i_gal] == -1 :
-                    uncertainties = calc_hessian(best_fit, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
-                                         param_outputs['Sigma_disk'], param_outputs['R_disk'], fit_function, scale,\
-                                         shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID)
-                    out_table['rho bulge'][i_gal] = param_outputs['rho_bulge']
-                    out_table['R bulge'][i_gal] = param_outputs['R_bulge']
-                    out_table['sigma disk'][i_gal] = param_outputs['Sigma_disk']
-                    out_table['R disk'][i_gal] = param_outputs['R_disk']
-                    out_table['rho bulge err'] = param_outputs['rho_bulge_err']
-                    out_table['R bulge err'] = param_outputs['R_bulge_err']
-                    out_table['sigma disk err'] =  param_outputs['Sigma_disk_err']
-                    out_table['R disk err'] = param_outputs['R_disk_err']
-                    out_table['rho halo'][i_gal], out_table['R halo'][i_gal], out_table['incl'][i_gal], out_table['phi'][i_gal], \
-                    out_table['x0'][i_gal], out_table['y0'][i_gal], out_table['vsys'][i_gal] = best_fit
-                    out_table['rho halo err'][i_gal], out_table['R halo err'][i_gal], out_table['incl err'][i_gal], \
-                    out_table['phi err'][i_gal], out_table['x0 err'][i_gal], out_table['y0 err'][i_gal], \
-                    out_table['vsys err'][i_gal] = uncertainties
-                    out_table['chi2'][i_gal] = c2
-                    out_table['fit flag'][i_gal] = fit_flag
-                    plot_fitted_disk_rot_curve(gal_ID, \
-                                               mass_data_table, \
-                                               param_outputs, \
-                                               sM_chi2, \
-                                               'bulge', IMAGE_DIR = IMAGE_DIR)
-                    plot_rot_curve (maps['vmasked'], maps['ivarmasked'], fit, scale, gal_ID, fit_function, \
-                                       IMAGE_DIR = IMAGE_DIR, IMAGE_FORMAT='png')
+                    #check if fit is close enough to past iteration
+                    if np.abs(best_fit[2]-param[2])<0.001 and np.abs(best_fit[4]-param[4])<1 and np.abs(best_fit[3]-param[3])<0.0017 \
+                            and np.abs(best_fit[5]-param[5])<1 and np.abs(best_fit[6]-param[6])<0.01:
+                        fit_flag = i
+                        print("Converged", flush=True)
+                        break
+                
+                    param = best_fit
+                
+                
+                if fit_flag >= 0:
+                    no_fits = False
+                    fit = [param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+                                           param_outputs['Sigma_disk'], param_outputs['R_disk'], \
+                                           best_fit[0], best_fit[1], best_fit[2], best_fit[3], \
+                                           best_fit[4],best_fit[5],best_fit[6]]
+                
+                    sM_chi2 = chi2_mass(fit[0:4], mass_data_table['radius'], mass_data_table['star_vel'], mass_data_table['star_vel_err'])               
+                    c2 = chi2(maps['vmasked'], maps['ivarmasked'],vmap_mask,shape,scale,fit,fit_function)[1]
+                    if c2 < out_table['chi2'][i_gal] or out_table['chi2'][i_gal] == -1 :
+                        uncertainties = calc_hessian(best_fit, param_outputs['rho_bulge'], param_outputs['R_bulge'],\
+                                             param_outputs['Sigma_disk'], param_outputs['R_disk'], fit_function, scale,\
+                                             shape, maps['vmasked'], maps['ivarmasked'], vmap_mask, gal_ID)
+                        out_table['rho bulge'][i_gal] = param_outputs['rho_bulge']
+                        out_table['R bulge'][i_gal] = param_outputs['R_bulge']
+                        out_table['sigma disk'][i_gal] = param_outputs['Sigma_disk']
+                        out_table['R disk'][i_gal] = param_outputs['R_disk']
+                        out_table['rho bulge err'] = param_outputs['rho_bulge_err']
+                        out_table['R bulge err'] = param_outputs['R_bulge_err']
+                        out_table['sigma disk err'] =  param_outputs['Sigma_disk_err']
+                        out_table['R disk err'] = param_outputs['R_disk_err']
+                        out_table['rho halo'][i_gal], out_table['R halo'][i_gal], out_table['incl'][i_gal], out_table['phi'][i_gal], \
+                        out_table['x0'][i_gal], out_table['y0'][i_gal], out_table['vsys'][i_gal] = best_fit
+                        out_table['rho halo err'][i_gal], out_table['R halo err'][i_gal], out_table['incl err'][i_gal], \
+                        out_table['phi err'][i_gal], out_table['x0 err'][i_gal], out_table['y0 err'][i_gal], \
+                        out_table['vsys err'][i_gal] = uncertainties
+                        out_table['chi2'][i_gal] = c2
+                        out_table['fit flag'][i_gal] = fit_flag
+                        plot_fitted_disk_rot_curve(gal_ID, \
+                                                   mass_data_table, \
+                                                   param_outputs, \
+                                                   sM_chi2, \
+                                                   'bulge', IMAGE_DIR = IMAGE_DIR)
+                        plot_rot_curve (maps['vmasked'], maps['ivarmasked'], fit, scale, gal_ID, fit_function, \
+                                           IMAGE_DIR = IMAGE_DIR, IMAGE_FORMAT='png')
 
         
         
@@ -333,5 +332,5 @@ for gal_ID in FILE_IDS:
     print(gal_ID," Time: ",datetime.datetime.now() - TIME , flush=True)
 
     if True: #galcount%20 == 0 or N_files < 20:
-        out_table.write(OUT_FILE_FOLDER+"testingphis"+'.fits',format='fits',overwrite = True)
+        out_table.write(OUT_FILE_FOLDER+"testingincliandphi"+'.fits',format='fits',overwrite = True)
 print('Runtime:',datetime.datetime.now() - START, flush = True)

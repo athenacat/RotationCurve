@@ -64,7 +64,7 @@ failed_object_table = Table.read('/scratch/lstroud3/RotationCurves/failed_object
 DRP_table = Table.read( DRP_FILENAME, format='fits')
 DRP_index = {}
 index = []
-failed_centers = failed_object_table[failed_object_table['visual code']==5] #fixing find_phi 
+failed_centers = failed_object_table[failed_object_table['visual code']==3.2] #fixing centers 
 FILE_IDS = failed_centers['plateifu']
 #DRP_table['plateifu'][(batchnum*1000):((batchnum+1)*1000)] #use to take rows of the DRPall
 print(FILE_IDS)                       
@@ -198,14 +198,16 @@ for gal_ID in FILE_IDS:
                           '11012-12703','8239-12703','8941-12703','8717-12705',\
                           '10841-12705','11018-12701','11743-12701','11751-12702',\
                           '11824-12702','11832-12702','11865-12705','12651-12701',\
-                          '8088-12704','8438-12705','8711-12701','8950-12705','9037-9102'\
-                         '9498-12703',]:
+                          '8088-12704','8438-12705','8711-12701','8950-12705','9037-9102',\
+                         '9498-12703','11978-12701','11955-12702',\
+                          '11977-12704','11982-12703','12069-12702','12769-12705',\
+                          '7958-12703','7981-12703']:
                 center = (37,37)
                 
             elif gal_ID in ['8466-12705','11021-12702']:
                 center = (37,42)
                 
-            elif gal_ID in ['10222-6102','8133-6102','8252-6103']:
+            elif gal_ID in ['10222-6102','8133-6102','8252-6103','8148-6102','8252-12701','7972-6102']:
                 center = (27,27)
 
             elif gal_ID == '11830-3704':
@@ -242,7 +244,7 @@ for gal_ID in FILE_IDS:
                 center = (40,37)
             elif gal_ID == '8626-1902':
                 center = (17,17)
-            elif gal_ID == '9046-12705':
+            elif gal_ID in ['9046-12705','8146-9101']:
                 center = (30,35)
             else:
                 center = np.unravel_index(ma.argmax(maps['rbandmasked']), shape)
@@ -407,5 +409,5 @@ for gal_ID in FILE_IDS:
     print(gal_ID," Time: ",datetime.datetime.now() - TIME , flush=True)
 
     if True: #galcount%20 == 0 or N_files < 20:
-        out_table.write(OUT_FILE_FOLDER+"findphifix"+'.fits',format='fits',overwrite = True)
+        out_table.write(OUT_FILE_FOLDER+"centerfix2"+'.fits',format='fits',overwrite = True)
 print('Runtime:',datetime.datetime.now() - START, flush = True)

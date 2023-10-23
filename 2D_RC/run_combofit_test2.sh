@@ -8,9 +8,9 @@
 
 
 
-#SBATCH -o /scratch/lstroud3/RotationCurves/combofitIsoFixfindphi.log
+#SBATCH -o /scratch/lstroud3/RotationCurves/combofitnfwFixincl.log
                                                                                                                          
-#SBATCH -e /scratch/lstroud3/RotationCurves/combofitIsoFixfindphi.err
+#SBATCH -e /scratch/lstroud3/RotationCurves/combofitnfwFixincl.err
 #SBATCH --mail-user=lstroud3@u.rochester.edu                                                                                                                       
 
 #SBATCH --mail-type=ALL                                                                                                                         
@@ -18,4 +18,4 @@
 module unload python3
 module load anaconda3/2021.11
 
-srun python combo_fit_fixed_centers.py NFW
+srun python combo_fit_fixed_incl.py NFW
